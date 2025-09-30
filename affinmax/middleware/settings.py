@@ -25,7 +25,8 @@ SECRET_KEY = 'django-insecure-v3by#p+fvee71!kjekoggj64mfv%2(d(kktl%*l7%kdepg%%f8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+#ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.100.162']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -69,7 +70,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'affinmax.wsgi.application'
+WSGI_APPLICATION = 'middleware.wsgi.application'
 
 
 # Database
@@ -77,10 +78,15 @@ WSGI_APPLICATION = 'affinmax.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'affinmax_db',
+        'USER': 'root',
+        'PASSWORD': 'Leong@524',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
     }
 }
+
 
 
 # Password validation

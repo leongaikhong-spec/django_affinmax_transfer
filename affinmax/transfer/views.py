@@ -1,60 +1,114 @@
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from datetime import datetime
-import json
+from .models import LogEntry
 
 should_run_script_map = {}
 credentials_map = {}
 
-@csrf_exempt
+# ========== trigger ==========
+@swagger_auto_schema(
+    method="post",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "corp_id": openapi.Schema(type=openapi.TYPE_STRING),
+            "user_id": openapi.Schema(type=openapi.TYPE_STRING),
+            "password": openapi.Schema(type=openapi.TYPE_STRING),
+            "tranPass": openapi.Schema(type=openapi.TYPE_STRING),
+            "similarityThreshold": openapi.Schema(type=openapi.TYPE_NUMBER),
+            "beneficiaries": openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Items(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "tran_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "amount": openapi.Schema(type=openapi.TYPE_STRING),
+                        "bene_acc_no": openapi.Schema(type=openapi.TYPE_STRING),
+                        "bene_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "bank_code": openapi.Schema(type=openapi.TYPE_STRING),
+                        "recRef": openapi.Schema(type=openapi.TYPE_STRING),
+                    }
+                )
+            ),
+        },
+        required=["corp_id", "user_id", "password"],
+    ),
+    responses={200: "Trigger set"},
+)
+@api_view(["POST"])
 def trigger(request, pn):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        credentials_map[pn] = {
-            "corp_id": data.get("corp_id"),
-            "user_id": data.get("user_id"),
-            "password": data.get("password"),
-            "tranPass": data.get("tranPass"),
-            "similarityThreshold": data.get("similarityThreshold"),
-            "beneficiaries": data.get("beneficiaries", []),
-        }
-        should_run_script_map[pn] = True
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data = request.data
+    credentials_map[pn] = {
+        "corp_id": data.get("corp_id"),
+        "user_id": data.get("user_id"),
+        "password": data.get("password"),
+        "tranPass": data.get("tranPass"),
+        "similarityThreshold": data.get("similarityThreshold"),
+        "beneficiaries": data.get("beneficiaries", []),
+    }
+    should_run_script_map[pn] = True
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        with open(f"{pn}.txt", "a", encoding="utf-8") as f:
-            f.write(f"\n[{timestamp}] Trigger received\n")
+    with open(f"{pn}.txt", "a", encoding="utf-8") as f:
+        f.write(f"\n[{timestamp}] Trigger received\n")
 
-        return JsonResponse({"message": f"Trigger set for {pn}"})
-    return JsonResponse({"error": "Invalid request"}, status=400)
+    return Response({"message": f"Trigger set for {pn}"})
 
 
+# ========== run_script ==========
+@swagger_auto_schema(
+    method="get",
+    manual_parameters=[
+        openapi.Parameter("pn", openapi.IN_QUERY, description="Phone number", type=openapi.TYPE_STRING),
+    ],
+    responses={200: "Script action"},
+)
+@api_view(["GET"])
 def run_script(request):
     pn = request.GET.get("pn")
     if not pn:
-        return JsonResponse({"error": "Missing phone number (pn)"}, status=400)
+        return Response({"error": "Missing phone number (pn)"}, status=400)
 
     if should_run_script_map.get(pn):
         should_run_script_map[pn] = False
-        return JsonResponse({
+        return Response({
             "action": "start",
             "credentials": credentials_map.get(pn)
         })
     else:
-        return JsonResponse({"action": "wait"})
+        return Response({"action": "wait"})
 
 
-@csrf_exempt
+# ========== receive_log ==========
+@swagger_auto_schema(
+    method="post",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "pn": openapi.Schema(type=openapi.TYPE_STRING),
+            "message": openapi.Schema(type=openapi.TYPE_STRING),
+        },
+        required=["pn", "message"],
+    ),
+    responses={200: "Log stored"},
+)
+@api_view(["POST"])
 def receive_log(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        pn = data.get("pn", "unknown")
-        message = data.get("message", "")
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data = request.data
+    pn = data.get("pn", "unknown")
+    message = data.get("message", "")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        log_line = f"[{timestamp}] {message}"
+    log_line = f"[{timestamp}] {message}"
 
-        with open(f"{pn}.txt", "a", encoding="utf-8") as f:
-            f.write(log_line + "\n")
+    # ✅ 存数据库
+    LogEntry.objects.create(phone_number=pn, message=message)
 
-        return JsonResponse({"status": "ok"})
-    return JsonResponse({"error": "Invalid request"}, status=400)
+    # ✅ 也写 txt
+    with open(f"{pn}.txt", "a", encoding="utf-8") as f:
+        f.write(log_line + "\n")
+
+    return Response({"status": "ok"})
