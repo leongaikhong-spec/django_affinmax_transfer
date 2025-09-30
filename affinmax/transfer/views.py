@@ -4,6 +4,10 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import datetime
 from .models import LogEntry
+from django.http import JsonResponse
+from asgiref.sync import async_to_sync
+from .consumers import connections
+import json
 
 should_run_script_map = {}
 credentials_map = {}
@@ -22,15 +26,17 @@ credentials_map = {}
             "beneficiaries": openapi.Schema(
                 type=openapi.TYPE_ARRAY,
                 items=openapi.Items(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        "tran_id": openapi.Schema(type=openapi.TYPE_STRING),
-                        "amount": openapi.Schema(type=openapi.TYPE_STRING),
-                        "bene_acc_no": openapi.Schema(type=openapi.TYPE_STRING),
-                        "bene_name": openapi.Schema(type=openapi.TYPE_STRING),
-                        "bank_code": openapi.Schema(type=openapi.TYPE_STRING),
-                        "recRef": openapi.Schema(type=openapi.TYPE_STRING),
-                    }
+                    type=openapi.Items(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "tran_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "amount": openapi.Schema(type=openapi.TYPE_STRING),
+                            "bene_acc_no": openapi.Schema(type=openapi.TYPE_STRING),
+                            "bene_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "bank_code": openapi.Schema(type=openapi.TYPE_STRING),
+                            "recRef": openapi.Schema(type=openapi.TYPE_STRING),
+                        }
+                    )
                 )
             ),
         },
@@ -41,7 +47,7 @@ credentials_map = {}
 @api_view(["POST"])
 def trigger(request, pn):
     data = request.data
-    credentials_map[pn] = {
+    credentials = {
         "corp_id": data.get("corp_id"),
         "user_id": data.get("user_id"),
         "password": data.get("password"),
@@ -49,13 +55,29 @@ def trigger(request, pn):
         "similarityThreshold": data.get("similarityThreshold"),
         "beneficiaries": data.get("beneficiaries", []),
     }
-    should_run_script_map[pn] = True
+    credentials_map[pn] = credentials
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    with open(f"{pn}.txt", "a", encoding="utf-8") as f:
-        f.write(f"\n[{timestamp}] Trigger received\n")
+    # ✅ 如果设备在线，直接通过 WebSocket 推送
+    if pn in connections:
+        async_to_sync(connections[pn].send)(
+            text_data=json.dumps({
+                "action": "start",
+                "credentials": credentials,
+            })
+        )
+        log_msg = f"[{timestamp}] Trigger pushed via WebSocket"
+        with open(f"{pn}.txt", "a", encoding="utf-8") as f:
+            f.write(log_msg + "\n")
+        return JsonResponse({"message": f"Task pushed to {pn} (via WebSocket)"})
 
-    return Response({"message": f"Trigger set for {pn}"})
+    # ❌ 如果设备不在线，走原有轮询机制
+    should_run_script_map[pn] = True
+    with open(f"{pn}.txt", "a", encoding="utf-8") as f:
+        f.write(f"\n[{timestamp}] Trigger stored (waiting for pull)\n")
+
+    return Response({"message": f"Trigger stored for {pn}"})
 
 
 # ========== run_script ==========

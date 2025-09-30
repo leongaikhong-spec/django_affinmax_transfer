@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'transfer',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -129,3 +130,15 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+ASGI_APPLICATION = 'middleware.asgi.application'
+
+# 如果你有 Redis，可以加上（推荐，支持多进程/多机）
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",  # 本地内存版（简单测试用）
+        # 用 redis 时换成：
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
+    }
+}

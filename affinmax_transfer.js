@@ -3,12 +3,12 @@
 
 const SERVER_IP = "192.168.100.162";  // Device IP Address
 const PHONE_NUMBER = "0123456789";    // Current device phone number
-const POLL_INTERVAL = 3000;
-const TRIGGER_URL = "http://" + SERVER_IP + ":3000/run-script?pn=" + PHONE_NUMBER;
+//const POLL_INTERVAL = 3000;
+//const TRIGGER_URL = "http://" + SERVER_IP + ":3000/run-script?pn=" + PHONE_NUMBER;
 
 function log(msg) {
     try {
-        http.postJson("http://" + SERVER_IP + ":3000/log", {
+        http.postJson("http://" + SERVER_IP + ":3000/log/", {
             pn: PHONE_NUMBER,
             message: msg
         });
@@ -18,36 +18,76 @@ function log(msg) {
     console.log(msg);
 }
 
-setInterval(() => {
-    try {
-        let res = http.get(TRIGGER_URL);
-        if (res.statusCode === 200) {
-            let content = res.body.string().trim();
-            let json;
-            try {
-                json = JSON.parse(content);
-            } catch (err) {
-                log("❌ JSON parse error: " + err);
-                return;
-            }
+// setInterval(() => {
+//     try {
+//         let res = http.get(TRIGGER_URL);
+//         if (res.statusCode === 200) {
+//             let content = res.body.string().trim();
+//             let json;
+//             try {
+//                 json = JSON.parse(content);
+//             } catch (err) {
+//                 log("❌ JSON parse error: " + err);
+//                 return;
+//             }
 
-            if (json.action === "start") {
-                let data = json.credentials || {};
-                threads.start(() => {
-                    try {
-                        run_transfer_process(data);
-                    } catch (err) {
-                        log("❌ Transfer process crashed: " + err);
-                        close_app();
-                    }
-                });
-            }
-        }
-    } catch (e) {
-        log("❌ Polling Error: " + e);
-        return close_app();
+//             if (json.action === "start") {
+//                 let data = json.credentials || {};
+//                 threads.start(() => {
+//                     try {
+//                         run_transfer_process(data);
+//                     } catch (err) {
+//                         log("❌ Transfer process crashed: " + err);
+//                         close_app();
+//                     }
+//                 });
+//             }
+//         }
+//     } catch (e) {
+//         log("❌ Polling Error: " + e);
+//         return close_app();
+//     }
+// }, POLL_INTERVAL);
+
+// 建立 WebSocket 连接
+let ws = new WebSocket("ws://" + SERVER_IP + ":3000/ws/" + PHONE_NUMBER + "/");
+
+ws.on("open", () => {
+    log("✅ WebSocket connected for device " + PHONE_NUMBER);
+});
+
+ws.on("message", (msg) => {
+    log("📩 Received message: " + msg);
+
+    let json;
+    try {
+        json = JSON.parse(msg);
+    } catch (err) {
+        log("❌ JSON parse error: " + err);
+        return;
     }
-}, POLL_INTERVAL);
+
+    if (json.action === "start") {
+        let data = json.credentials || {};
+        threads.start(() => {
+            try {
+                run_transfer_process(data);
+            } catch (err) {
+                log("❌ Transfer process crashed: " + err);
+                close_app();
+            }
+        });
+    }
+});
+
+ws.on("close", () => {
+    log("❌ WebSocket disconnected, will try reconnect...");
+    setTimeout(connectWS, 5000);
+});
+
+ws.on("error", (e) => {
+    log("❌ WebSocket error: " + e);
+});
 
 let error_status = "2";
 let message = "Transaction Success";

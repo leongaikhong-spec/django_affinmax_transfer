@@ -11,3 +11,73 @@
 [2025-09-30 05:08:18] Trigger received
 
 [2025-09-30 05:14:26] Trigger received
+[2025-09-30 08:25:24] Trigger pushed via WebSocket
+[2025-09-30 08:25:39] Trigger pushed via WebSocket
+[2025-09-30 08:25:44] Trigger pushed via WebSocket
+[2025-09-30 08:25:46] Trigger pushed via WebSocket
+[2025-09-30 08:28:00] Trigger pushed via WebSocket
+[2025-09-30 08:35:10] ✅ WebSocket connected for device 0123456789
+[2025-09-30 08:35:31] ✅ WebSocket connected for device 0123456789
+[2025-09-30 08:35:38] Trigger pushed via WebSocket
+[2025-09-30 08:35:39] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": 0.7, "beneficiaries": [{"tran_id": "1314520", "amount": "10.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING", "bank_code": "49", "recRef": "Test"}]}}
+[2025-09-30 08:35:39] --------------------------------------------------------------------------
+[2025-09-30 08:35:39] Script run started at Tue Sep 30 2025 16:35:39 GMT+0800 (GMT+08:00)
+[2025-09-30 08:35:39] --------------------------------------------------------------------------
+[2025-09-30 08:35:39] ➡️ Beneficiary Details 1
+[2025-09-30 08:35:39]    Transfer ID     : 1314520
+[2025-09-30 08:35:39]    Name            : SPRING
+[2025-09-30 08:35:39]    Account No      : 20206900069899
+[2025-09-30 08:35:39]    Transfer Amount : 10.00
+[2025-09-30 08:35:39]    Bank Code       : 49
+[2025-09-30 08:35:39] --------------------------------------------------------------------------
+[2025-09-30 08:35:40] ✅ Opened AffinMax app
+[2025-09-30 08:35:44] ✅ Filled corporate ID
+[2025-09-30 08:35:44] ✅ Filled user ID
+[2025-09-30 08:35:44] ✅ Clicked next button
+[2025-09-30 08:35:45] 👉 Filling login password...
+[2025-09-30 08:35:45] ✅ Password filled
+[2025-09-30 08:35:46] ✅ Clicked login button
+[2025-09-30 08:35:54] ✅ Clicked Show Balance button
+[2025-09-30 08:35:55] 💰 Current balance: 260 | Total transfer amount: 10
+[2025-09-30 08:35:55] ✅ Balance is sufficient, continue transfer
+[2025-09-30 08:35:55] ✅ Clicked DuitNow button
+[2025-09-30 08:35:56] ✅ Clicked DuitNow Transfer button
+[2025-09-30 08:35:57] ✅ Clicked Pay to Account button
+[2025-09-30 08:35:57] ✅ Clicked New Transfer button
+[2025-09-30 08:35:58] ✅ Bank selection button found
+[2025-09-30 08:35:58] ✅ Clicked dropdown button
+[2025-09-30 08:36:00] ✅ Chosen debit from account no./currency
+[2025-09-30 08:36:00] ---------------------- Adding beneficiary details 1 ----------------------
+[2025-09-30 08:36:00] ✅ Clicked Add Beneficiary button
+[2025-09-30 08:36:01] ❌ Not on Beneficiary page, cannot proceed.
+[2025-09-30 08:36:01] ✅ Chosen beneficiary type
+[2025-09-30 08:36:01] ✅ Clicked dropdown button for transaction type
+[2025-09-30 08:36:02] ✅ Chosen transaction type
+[2025-09-30 08:36:03] ✅ Filled transaction amount
+[2025-09-30 08:36:04] ✅ Filled beneficiary account no
+[2025-09-30 08:36:04] ✅ Filled beneficiary name
+[2025-09-30 08:36:04] ✅ Clicked select beneficiary bank button
+[2025-09-30 08:36:04] 🔍 Selecting bank: RHB BANK
+[2025-09-30 08:36:04] 🔍 Searching bank
+[2025-09-30 08:36:11] ✅ Selected RHB BANK
+[2025-09-30 08:36:12] ✅ Resident option selected
+[2025-09-30 08:36:12] ✅ Scrolled down
+[2025-09-30 08:36:13] ✅ Filled recipient reference
+[2025-09-30 08:36:13] ✅ Clicked order details
+[2025-09-30 08:36:14] ✅ Clicked OK button on finish adding beneficiary
+[2025-09-30 08:36:16] 👤 Registered name: SPRING FOOD ENTERPRISE
+[2025-09-30 08:36:16] 👤 Fill in name  : SPRING
+[2025-09-30 08:36:16] ⚠️ - The names are less than 70% similar.
+[2025-09-30 08:36:16] ✅ Clicked Cancel button after name mismatch
+[2025-09-30 08:36:16] ✅ Clicked Back button after name mismatch
+[2025-09-30 08:36:16] ❌ Fail to add beneficiary
+[2025-09-30 08:36:16] ------------------ Finished filling beneficiary details ------------------
+[2025-09-30 08:36:16] ✅ Clicked Preview button
+[2025-09-30 08:36:26] ---------------------- Total runtime: 47.637 seconds ---------------------
+[2025-09-30 08:36:26] remaining balance: true
+[2025-09-30 08:36:27] status: 3
+[2025-09-30 08:36:27] message: Something went wrong
+[2025-09-30 08:36:27] errorMessage: Automation fail at confirm_transfer
+[2025-09-30 08:36:29] --------------------------------------------------------------------------
+[2025-09-30 08:36:29] ✅ Closed affinmax app
+[2025-09-30 08:36:29] --------------------------------------------------------------------------
