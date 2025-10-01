@@ -25,20 +25,18 @@ credentials_map = {}
             "similarityThreshold": openapi.Schema(type=openapi.TYPE_NUMBER),
             "beneficiaries": openapi.Schema(
                 type=openapi.TYPE_ARRAY,
-                items=openapi.Items(
-                    type=openapi.Items(
-                        type=openapi.TYPE_OBJECT,
-                        properties={
-                            "tran_id": openapi.Schema(type=openapi.TYPE_STRING),
-                            "amount": openapi.Schema(type=openapi.TYPE_STRING),
-                            "bene_acc_no": openapi.Schema(type=openapi.TYPE_STRING),
-                            "bene_name": openapi.Schema(type=openapi.TYPE_STRING),
-                            "bank_code": openapi.Schema(type=openapi.TYPE_STRING),
-                            "recRef": openapi.Schema(type=openapi.TYPE_STRING),
-                        }
-                    )
+                items=openapi.Schema(   # ✅ 这里应该是 Schema，而不是 Items
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "tran_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "amount": openapi.Schema(type=openapi.TYPE_STRING),
+                        "bene_acc_no": openapi.Schema(type=openapi.TYPE_STRING),
+                        "bene_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "bank_code": openapi.Schema(type=openapi.TYPE_STRING),
+                        "recRef": openapi.Schema(type=openapi.TYPE_STRING),
+                    }
                 )
-            ),
+            )
         },
         required=["corp_id", "user_id", "password"],
     ),
