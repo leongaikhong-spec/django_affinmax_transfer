@@ -6,9 +6,53 @@ from datetime import datetime
 from django.http import JsonResponse
 from asgiref.sync import async_to_sync
 from .consumers import connections
-from .models import TransferList
+from .models import TransferList, MobileList
 from django.db.models import Max
 import json
+
+# ========== create_mobile ==========
+@swagger_auto_schema(
+    method="post",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "phone_number": openapi.Schema(type=openapi.TYPE_STRING),
+            "corp_id": openapi.Schema(type=openapi.TYPE_STRING),
+            "user_id": openapi.Schema(type=openapi.TYPE_STRING),
+            "password": openapi.Schema(type=openapi.TYPE_STRING),
+            "tran_pass": openapi.Schema(type=openapi.TYPE_STRING),
+            "current_balance": openapi.Schema(type=openapi.TYPE_STRING),
+            "is_online": openapi.Schema(type=openapi.TYPE_INTEGER, description="1=开, 0=关"),
+            "is_activated": openapi.Schema(type=openapi.TYPE_INTEGER, description="1=开, 0=关"),
+            "is_busy": openapi.Schema(type=openapi.TYPE_INTEGER, description="1=开, 0=关"),
+            "last_error": openapi.Schema(type=openapi.TYPE_STRING),
+            "log_file": openapi.Schema(type=openapi.TYPE_STRING),
+        },
+        required=["phone_number"],
+    ),
+    responses={200: "Mobile created"},
+)
+@api_view(["POST"])
+def create_mobile(request):
+    data = request.data
+    phone_number = data.get("phone_number")
+    if not phone_number:
+        return Response({"error": "Missing phone_number"}, status=400)
+
+    mobile, created = MobileList.objects.get_or_create(phone_number=phone_number)
+    # 更新其它字段
+    for field in [
+        "corp_id", "user_id", "password", "tran_pass", "current_balance",
+        "last_error", "log_file"
+    ]:
+        if field in data:
+            setattr(mobile, field, data[field])
+    for field in ["is_online", "is_activated", "is_busy"]:
+        if field in data:
+            setattr(mobile, field, bool(int(data[field])))
+    mobile.save()
+    return Response({"status": "ok", "created": created})
+
 
 should_run_script_map = {}
 credentials_map = {}
@@ -71,7 +115,8 @@ def trigger(request, pn):
             bene_acc_no=bene.get("bene_acc_no"),
             bene_name=bene.get("bene_name"),
             bank_code=bene.get("bank_code"),
-            recRef=bene.get("recRef")
+            recRef=bene.get("recRef"),
+            phone_number=pn
         )
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
