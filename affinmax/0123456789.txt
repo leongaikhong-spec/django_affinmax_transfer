@@ -732,3 +732,518 @@
 [2025-10-02 13:40:58] --------------------------------------------------------------------------
 [2025-10-02 13:40:58] ✅ Closed affinmax app
 [2025-10-02 13:40:58] --------------------------------------------------------------------------
+[2025-10-02 15:20:00] ✅ WebSocket connected for device 0123456789
+[2025-10-02 15:28:26] Trigger pushed via WebSocket
+[2025-10-02 15:28:26] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": 0.7, "beneficiaries": [{"tran_id": "9", "amount": "15.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING ENTERPRISE", "bank_code": "49", "recRef": "Test"}, {"tran_id": "10", "amount": "20.00", "bene_acc_no": "81023098213", "bene_name": "Monkey.D.Luffy", "bank_code": "50", "recRef": "Test2"}]}}
+[2025-10-02 15:28:26] --------------------------------------------------------------------------
+[2025-10-02 15:28:27] Script run started at Thu Oct 02 2025 15:28:26 GMT+0800 (GMT+08:00)
+[2025-10-02 15:28:27] --------------------------------------------------------------------------
+[2025-10-02 15:28:27] ➡️ Beneficiary Details 1
+[2025-10-02 15:28:27]    Transfer ID     : 9
+[2025-10-02 15:28:27]    Name            : SPRING ENTERPRISE
+[2025-10-02 15:28:28]    Account No      : 20206900069899
+[2025-10-02 15:28:28]    Transfer Amount : 15.00
+[2025-10-02 15:28:28]    Bank Code       : 49
+[2025-10-02 15:28:28] --------------------------------------------------------------------------
+[2025-10-02 15:28:28] ➡️ Beneficiary Details 2
+[2025-10-02 15:28:28]    Transfer ID     : 10
+[2025-10-02 15:28:28]    Name            : Monkey.D.Luffy
+[2025-10-02 15:28:28]    Account No      : 81023098213
+[2025-10-02 15:28:28]    Transfer Amount : 20.00
+[2025-10-02 15:28:28]    Bank Code       : 50
+[2025-10-02 15:28:28] --------------------------------------------------------------------------
+[2025-10-02 15:28:28] ✅ Opened AffinMax app
+[2025-10-02 15:28:35] ✅ Filled corporate ID
+[2025-10-02 15:28:35] ✅ Filled user ID
+[2025-10-02 15:28:36] ✅ Clicked next button
+[2025-10-02 15:28:36] 👉 Filling login password...
+[2025-10-02 15:28:37] ✅ Password filled
+[2025-10-02 15:28:37] ✅ Clicked login button
+[2025-10-02 15:28:45] ✅ Clicked Show Balance button
+[2025-10-02 15:28:46] 💰 Current balance: 210 | Total transfer amount: 35
+[2025-10-02 15:28:47] ✅ Balance is sufficient, continue transfer
+[2025-10-02 15:28:47] ✅ Clicked DuitNow button
+[2025-10-02 15:28:48] ✅ Clicked DuitNow Transfer button
+[2025-10-02 15:28:48] ✅ Clicked Pay to Account button
+[2025-10-02 15:28:49] ✅ Clicked New Transfer button
+[2025-10-02 15:28:50] ✅ Bank selection button found
+[2025-10-02 15:28:50] ✅ Clicked dropdown button
+[2025-10-02 15:28:51] ✅ Chosen debit from account no./currency
+[2025-10-02 15:28:51] ---------------------- Adding beneficiary details 1 ----------------------
+[2025-10-02 15:28:51] ✅ Clicked Add Beneficiary button
+[2025-10-02 15:28:53] ✅ Chosen beneficiary type
+[2025-10-02 15:28:53] ✅ Clicked dropdown button for transaction type
+[2025-10-02 15:28:54] ✅ Chosen transaction type
+[2025-10-02 15:28:55] ✅ Filled transaction amount
+[2025-10-02 15:28:55] ✅ Filled beneficiary account no
+[2025-10-02 15:28:56] ✅ Filled beneficiary name
+[2025-10-02 15:28:56] ✅ Clicked select beneficiary bank button
+[2025-10-02 15:28:56] 🔍 Selecting bank: RHB BANK
+[2025-10-02 15:28:56] 🔍 Searching bank
+[2025-10-02 15:29:03] ✅ Selected RHB BANK
+[2025-10-02 15:29:03] ✅ Resident option selected
+[2025-10-02 15:29:04] ✅ Scrolled down
+[2025-10-02 15:29:05] ✅ Filled recipient reference
+[2025-10-02 15:29:05] ✅ Clicked order details
+[2025-10-02 15:29:05] ✅ Clicked OK button on finish adding beneficiary
+[2025-10-02 15:29:07] 👤 Registered name: SPRING FOOD ENTERPRISE
+[2025-10-02 15:29:07] 👤 Fill in name  : SPRING ENTERPRISE
+[2025-10-02 15:29:07] ✅ - The names are at least 70% similar.
+[2025-10-02 15:29:08] 📸 Screenshot saved: /sdcard/Pictures/affinmax_confirm_custname_9.png
+[2025-10-02 15:29:08] ✅ Clicked Confirm button
+[2025-10-02 15:29:08] ✅ Finished adding beneficiary details 1
+[2025-10-02 15:29:08] ---------------------- Adding beneficiary details 2 ----------------------
+[2025-10-02 15:29:09] ✅ Clicked Add Beneficiary button
+[2025-10-02 15:29:10] ✅ Chosen beneficiary type
+[2025-10-02 15:29:10] ✅ Clicked dropdown button for transaction type
+[2025-10-02 15:29:11] ✅ Chosen transaction type
+[2025-10-02 15:29:11] ✅ Filled transaction amount
+[2025-10-02 15:29:12] ✅ Filled beneficiary account no
+[2025-10-02 15:29:13] ✅ Filled beneficiary name
+[2025-10-02 15:29:13] ✅ Clicked select beneficiary bank button
+[2025-10-02 15:29:13] 🔍 Selecting bank: RAZER MERCHANT SERVICES
+[2025-10-02 15:29:13] 🔍 Searching bank
+[2025-10-02 15:29:21] ✅ Selected RAZER MERCHANT SERVICES
+[2025-10-02 15:29:21] ✅ Resident option selected
+[2025-10-02 15:29:22] ✅ Scrolled down
+[2025-10-02 15:29:22] ✅ Filled recipient reference
+[2025-10-02 15:29:23] ✅ Clicked order details
+[2025-10-02 15:29:23] ✅ Clicked OK button on finish adding beneficiary
+[2025-10-02 15:29:24] ⚠️ Transaction not successful detected, skipping this beneficiary.
+[2025-10-02 15:29:24] ⚠️ tran_id: 10
+[2025-10-02 15:29:24] ⚠️ status: 4
+[2025-10-02 15:29:24] ⚠️ message: Invalid bank or account number.
+[2025-10-02 15:29:24] ⚠️ errorMessage: Invalid bank or account number.
+[2025-10-02 15:29:24] ✅ Clicked OK button on error dialog
+[2025-10-02 15:29:24] ✅ Clicked Back button
+[2025-10-02 15:29:24] ❌ Fail to add beneficiary
+[2025-10-02 15:29:24] ------------------ Finished filling beneficiary details ------------------
+[2025-10-02 15:29:25] ✅ Clicked Preview button
+[2025-10-02 15:29:26] ✅ Clicked t&c checkbox
+[2025-10-02 15:29:26] ✅ Clicked Submit button
+[2025-10-02 15:29:34] ✅ Clicked Approve button
+[2025-10-02 15:29:34] 👉 Filling transaction password...
+[2025-10-02 15:29:35] ✅ Filled transaction amount
+[2025-10-02 15:29:36] ✅ Clicked OK button
+[2025-10-02 15:29:37] ✅ Transfer successful, clicked Done button
+[2025-10-02 15:29:47] ✅ Clicked Download button
+[2025-10-02 15:29:47] ✅ Clicked OK button
+[2025-10-02 15:29:47] ✅ Navigated to Accounts tab
+[2025-10-02 15:29:51] ---------------------- Total runtime: 80.812 seconds ---------------------
+[2025-10-02 15:29:51] remaining balance: 195
+[2025-10-02 15:29:51] status: 2
+[2025-10-02 15:29:51] message: Transaction Success
+[2025-10-02 15:29:51] errorMessage: null
+[2025-10-02 15:29:53] --------------------------------------------------------------------------
+[2025-10-02 15:29:54] ✅ Closed affinmax app
+[2025-10-02 15:29:54] --------------------------------------------------------------------------
+[2025-10-02 15:30:06] Trigger pushed via WebSocket
+[2025-10-02 15:51:03] ✅ WebSocket connected for device 0123456789
+[2025-10-02 15:51:42] Trigger pushed via WebSocket
+[2025-10-02 15:51:42] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": 0.7, "beneficiaries": [{"tran_id": "13", "amount": "15.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING ENTERPRISE", "bank_code": "49", "recRef": "Test"}, {"tran_id": "14", "amount": "20.00", "bene_acc_no": "81023098213", "bene_name": "Monkey.D.Luffy", "bank_code": "50", "recRef": "Test2"}]}}
+[2025-10-02 15:51:42] 🚀 Launching transfer.js...
+[2025-10-02 15:52:15] ✅ WebSocket connected for device 0123456789
+[2025-10-02 15:52:28] Trigger pushed via WebSocket
+[2025-10-02 15:52:28] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": 0.7, "beneficiaries": [{"tran_id": "15", "amount": "15.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING ENTERPRISE", "bank_code": "49", "recRef": "Test"}, {"tran_id": "16", "amount": "20.00", "bene_acc_no": "81023098213", "bene_name": "Monkey.D.Luffy", "bank_code": "50", "recRef": "Test2"}]}}
+[2025-10-02 15:52:28] 🚀 Launching transfer.js...
+[2025-10-02 15:52:28] --------------------------------------------------------------------------
+[2025-10-02 15:52:28] Script run started at Thu Oct 02 2025 15:52:28 GMT+0800 (GMT+08:00)
+[2025-10-02 15:52:28] --------------------------------------------------------------------------
+[2025-10-02 15:52:28] ➡️ Beneficiary Details 1
+[2025-10-02 15:52:28]    Transfer ID     : 15
+[2025-10-02 15:52:28]    Name            : SPRING ENTERPRISE
+[2025-10-02 15:52:28]    Account No      : 20206900069899
+[2025-10-02 15:52:29]    Transfer Amount : 15.00
+[2025-10-02 15:52:29]    Bank Code       : 49
+[2025-10-02 15:52:29] --------------------------------------------------------------------------
+[2025-10-02 15:52:29] ➡️ Beneficiary Details 2
+[2025-10-02 15:52:29]    Transfer ID     : 16
+[2025-10-02 15:52:29]    Name            : Monkey.D.Luffy
+[2025-10-02 15:52:29]    Account No      : 81023098213
+[2025-10-02 15:52:29]    Transfer Amount : 20.00
+[2025-10-02 15:52:29]    Bank Code       : 50
+[2025-10-02 15:52:29] --------------------------------------------------------------------------
+[2025-10-02 15:52:29] ✅ Opened AffinMax app
+[2025-10-02 15:52:34] ✅ Filled corporate ID
+[2025-10-02 15:52:35] ✅ Filled user ID
+[2025-10-02 15:52:35] ✅ Clicked next button
+[2025-10-02 15:52:35] 👉 Filling login password...
+[2025-10-02 15:52:37] ✅ Password filled
+[2025-10-02 15:52:37] ✅ Clicked login button
+[2025-10-02 15:53:06] ❌ Could not find balance element
+[2025-10-02 15:53:06] ---------------------- Total runtime: 38.329 seconds ---------------------
+[2025-10-02 15:53:06] remaining balance: null
+[2025-10-02 15:53:06] status: 4
+[2025-10-02 15:53:06] message: Insufficient balance
+[2025-10-02 15:53:06] errorMessage: Balance less than transfer amount
+[2025-10-02 15:53:14] ---------------------- Total runtime: 45.913 seconds ---------------------
+[2025-10-02 15:53:14] remaining balance: null
+[2025-10-02 15:53:14] status: 3
+[2025-10-02 15:53:14] message: Something went wrong
+[2025-10-02 15:53:14] errorMessage: Automation fail at check_balance
+[2025-10-02 15:57:33] Trigger pushed via WebSocket
+[2025-10-02 15:57:33] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": 0.7, "beneficiaries": [{"tran_id": "17", "amount": "15.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING ENTERPRISE", "bank_code": "49", "recRef": "Test"}, {"tran_id": "18", "amount": "20.00", "bene_acc_no": "81023098213", "bene_name": "Monkey.D.Luffy", "bank_code": "50", "recRef": "Test2"}]}}
+[2025-10-02 15:57:33] 🚀 Launching transfer.js...
+[2025-10-02 15:57:33] --------------------------------------------------------------------------
+[2025-10-02 15:57:34] Script run started at Thu Oct 02 2025 15:57:33 GMT+0800 (GMT+08:00)
+[2025-10-02 15:57:34] --------------------------------------------------------------------------
+[2025-10-02 15:57:34] ➡️ Beneficiary Details 1
+[2025-10-02 15:57:34]    Transfer ID     : 17
+[2025-10-02 15:57:34]    Name            : SPRING ENTERPRISE
+[2025-10-02 15:57:34]    Account No      : 20206900069899
+[2025-10-02 15:57:34]    Transfer Amount : 15.00
+[2025-10-02 15:57:34]    Bank Code       : 49
+[2025-10-02 15:57:34] --------------------------------------------------------------------------
+[2025-10-02 15:57:34] ➡️ Beneficiary Details 2
+[2025-10-02 15:57:34]    Transfer ID     : 18
+[2025-10-02 15:57:34]    Name            : Monkey.D.Luffy
+[2025-10-02 15:57:34]    Account No      : 81023098213
+[2025-10-02 15:57:34]    Transfer Amount : 20.00
+[2025-10-02 15:57:34]    Bank Code       : 50
+[2025-10-02 15:57:34] --------------------------------------------------------------------------
+[2025-10-02 15:57:35] ✅ Opened AffinMax app
+[2025-10-02 15:57:40] ✅ Filled corporate ID
+[2025-10-02 15:57:40] ✅ Filled user ID
+[2025-10-02 15:57:40] ✅ Clicked next button
+[2025-10-02 15:57:40] 👉 Filling login password...
+[2025-10-02 15:57:42] ✅ Password filled
+[2025-10-02 15:57:42] ✅ Clicked login button
+[2025-10-02 15:58:00] ✅ Clicked Show Balance button
+[2025-10-02 15:58:01] 💰 Current balance: 195 | Total transfer amount: 35
+[2025-10-02 15:58:01] ✅ Balance is sufficient, continue transfer
+[2025-10-02 15:58:01] ✅ Clicked DuitNow button
+[2025-10-02 15:58:02] ✅ Clicked DuitNow Transfer button
+[2025-10-02 15:58:03] ✅ Clicked Pay to Account button
+[2025-10-02 15:58:04] ✅ Clicked New Transfer button
+[2025-10-02 15:58:06] ✅ Bank selection button found
+[2025-10-02 15:58:06] ✅ Clicked dropdown button
+[2025-10-02 15:58:07] ✅ Chosen debit from account no./currency
+[2025-10-02 15:58:07] ---------------------- Adding beneficiary details 1 ----------------------
+[2025-10-02 15:58:08] ✅ Clicked Add Beneficiary button
+[2025-10-02 15:58:11] ✅ Chosen beneficiary type
+[2025-10-02 15:58:11] ✅ Clicked dropdown button for transaction type
+[2025-10-02 15:58:13] ✅ Chosen transaction type
+[2025-10-02 15:58:13] ✅ Filled transaction amount
+[2025-10-02 15:58:14] ✅ Filled beneficiary account no
+[2025-10-02 15:58:14] ✅ Filled beneficiary name
+[2025-10-02 15:58:14] ✅ Clicked select beneficiary bank button
+[2025-10-02 15:58:14] 🔍 Selecting bank: RHB BANK
+[2025-10-02 15:58:15] 🔍 Searching bank
+[2025-10-02 15:58:21] ✅ Selected RHB BANK
+[2025-10-02 15:58:22] ✅ Resident option selected
+[2025-10-02 15:58:22] ✅ Scrolled down
+[2025-10-02 15:58:23] ✅ Filled recipient reference
+[2025-10-02 15:58:23] ✅ Clicked order details
+[2025-10-02 15:58:23] ✅ Clicked OK button on finish adding beneficiary
+[2025-10-02 15:58:31] 👤 Registered name: SPRING FOOD ENTERPRISE
+[2025-10-02 15:58:31] 👤 Fill in name  : SPRING ENTERPRISE
+[2025-10-02 15:58:31] ✅ - The names are at least 70% similar.
+[2025-10-02 15:58:32] 📸 Screenshot saved: /sdcard/Pictures/affinmax_confirm_custname_17.png
+[2025-10-02 15:58:32] ✅ Clicked Confirm button
+[2025-10-02 15:58:32] ✅ Finished adding beneficiary details 1
+[2025-10-02 15:58:33] ---------------------- Adding beneficiary details 2 ----------------------
+[2025-10-02 15:58:33] ✅ Clicked Add Beneficiary button
+[2025-10-02 15:58:35] ✅ Chosen beneficiary type
+[2025-10-02 15:58:35] ✅ Clicked dropdown button for transaction type
+[2025-10-02 15:58:36] ✅ Chosen transaction type
+[2025-10-02 15:58:37] ✅ Filled transaction amount
+[2025-10-02 15:58:38] ✅ Filled beneficiary account no
+[2025-10-02 15:58:38] ✅ Filled beneficiary name
+[2025-10-02 15:58:38] ✅ Clicked select beneficiary bank button
+[2025-10-02 15:58:38] 🔍 Selecting bank: RAZER MERCHANT SERVICES
+[2025-10-02 15:58:38] 🔍 Searching bank
+[2025-10-02 15:58:46] ✅ Selected RAZER MERCHANT SERVICES
+[2025-10-02 15:58:47] ✅ Resident option selected
+[2025-10-02 15:58:48] ✅ Scrolled down
+[2025-10-02 15:58:48] ✅ Filled recipient reference
+[2025-10-02 15:58:48] ✅ Clicked order details
+[2025-10-02 15:58:49] ✅ Clicked OK button on finish adding beneficiary
+[2025-10-02 15:58:49] ⚠️ Transaction not successful detected, skipping this beneficiary.
+[2025-10-02 15:58:49] ⚠️ Transaction ID: 18
+[2025-10-02 15:58:50] ⚠️ status: 4
+[2025-10-02 15:58:51] ⚠️ message: Invalid bank or account number.
+[2025-10-02 15:58:51] ⚠️ errorMessage: Invalid bank or account number.
+[2025-10-02 15:58:51] ✅ Clicked OK button on error dialog
+[2025-10-02 15:58:51] ✅ Clicked Back button
+[2025-10-02 15:58:51] ❌ Fail to add beneficiary
+[2025-10-02 15:58:51] ------------------ Finished filling beneficiary details ------------------
+[2025-10-02 15:58:52] ✅ Clicked Preview button
+[2025-10-02 15:58:54] ✅ Clicked t&c checkbox
+[2025-10-02 15:58:54] ✅ Clicked Submit button
+[2025-10-02 15:59:01] ✅ Clicked Approve button
+[2025-10-02 15:59:01] 👉 Filling transaction password...
+[2025-10-02 15:59:01] ✅ Filled transaction amount
+[2025-10-02 15:59:02] ✅ Clicked OK button
+[2025-10-02 15:59:05] ✅ Transfer successful, clicked Done button
+[2025-10-02 15:59:17] ---------------------- Total runtime: 103.38 seconds ---------------------
+[2025-10-02 15:59:17] remaining balance: 195
+[2025-10-02 15:59:17] status: 5
+[2025-10-02 15:59:17] message: Transaction Success
+[2025-10-02 15:59:17] errorMessage: Fail to download slip
+[2025-10-02 15:59:19] --------------------------------------------------------------------------
+[2025-10-02 15:59:19] ✅ Closed affinmax app
+[2025-10-02 15:59:19] --------------------------------------------------------------------------
+[2025-10-02 16:06:20] Trigger pushed via WebSocket
+[2025-10-02 16:06:20] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": 0.7, "beneficiaries": [{"tran_id": "19", "amount": "15.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING ENTERPRISE", "bank_code": "49", "recRef": "Test"}, {"tran_id": "20", "amount": "20.00", "bene_acc_no": "81023098213", "bene_name": "Monkey.D.Luffy", "bank_code": "50", "recRef": "Test2"}]}}
+[2025-10-02 16:06:20] 🚀 Launching transfer.js...
+[2025-10-02 16:06:20] --------------------------------------------------------------------------
+[2025-10-02 16:06:20] Script run started at Thu Oct 02 2025 16:06:20 GMT+0800 (GMT+08:00)
+[2025-10-02 16:06:20] --------------------------------------------------------------------------
+[2025-10-02 16:06:20] ➡️ Beneficiary Details 1
+[2025-10-02 16:06:20]    Transfer ID     : 19
+[2025-10-02 16:06:20]    Name            : SPRING ENTERPRISE
+[2025-10-02 16:06:21]    Account No      : 20206900069899
+[2025-10-02 16:06:21]    Transfer Amount : 15.00
+[2025-10-02 16:06:21]    Bank Code       : 49
+[2025-10-02 16:06:21] --------------------------------------------------------------------------
+[2025-10-02 16:06:21] ➡️ Beneficiary Details 2
+[2025-10-02 16:06:21]    Transfer ID     : 20
+[2025-10-02 16:06:21]    Name            : Monkey.D.Luffy
+[2025-10-02 16:06:21]    Account No      : 81023098213
+[2025-10-02 16:06:21]    Transfer Amount : 20.00
+[2025-10-02 16:06:21]    Bank Code       : 50
+[2025-10-02 16:06:21] --------------------------------------------------------------------------
+[2025-10-02 16:06:21] ✅ Opened AffinMax app
+[2025-10-02 16:06:25] ✅ Filled corporate ID
+[2025-10-02 16:06:25] ✅ Filled user ID
+[2025-10-02 16:06:26] ✅ Clicked next button
+[2025-10-02 16:06:26] 👉 Filling login password...
+[2025-10-02 16:06:27] ✅ Password filled
+[2025-10-02 16:06:27] ✅ Clicked login button
+[2025-10-02 16:06:39] ✅ Clicked Show Balance button
+[2025-10-02 16:06:41] 💰 Current balance: 180 | Total transfer amount: 35
+[2025-10-02 16:06:41] ✅ Balance is sufficient, continue transfer
+[2025-10-02 16:06:41] ✅ Clicked DuitNow button
+[2025-10-02 16:06:42] ✅ Clicked DuitNow Transfer button
+[2025-10-02 16:06:42] ✅ Clicked Pay to Account button
+[2025-10-02 16:06:45] ✅ Clicked New Transfer button
+[2025-10-02 16:06:47] ✅ Bank selection button found
+[2025-10-02 16:06:47] ✅ Clicked dropdown button
+[2025-10-02 16:06:49] ✅ Chosen debit from account no./currency
+[2025-10-02 16:06:49] ---------------------- Adding beneficiary details 1 ----------------------
+[2025-10-02 16:06:49] ✅ Clicked Add Beneficiary button
+[2025-10-02 16:06:50] ❌ Not on Beneficiary page, cannot proceed.
+[2025-10-02 16:06:50] ✅ Chosen beneficiary type
+[2025-10-02 16:06:50] ✅ Clicked dropdown button for transaction type
+[2025-10-02 16:06:52] ✅ Chosen transaction type
+[2025-10-02 16:06:52] ✅ Filled transaction amount
+[2025-10-02 16:06:53] ✅ Filled beneficiary account no
+[2025-10-02 16:06:53] ✅ Filled beneficiary name
+[2025-10-02 16:06:53] ✅ Clicked select beneficiary bank button
+[2025-10-02 16:06:53] 🔍 Selecting bank: RHB BANK
+[2025-10-02 16:06:53] 🔍 Searching bank
+[2025-10-02 16:07:01] ✅ Selected RHB BANK
+[2025-10-02 16:07:01] ✅ Resident option selected
+[2025-10-02 16:07:02] ✅ Scrolled down
+[2025-10-02 16:07:02] ✅ Filled recipient reference
+[2025-10-02 16:07:03] ✅ Clicked order details
+[2025-10-02 16:07:03] ✅ Clicked OK button on finish adding beneficiary
+[2025-10-02 16:07:10] 👤 Registered name: SPRING FOOD ENTERPRISE
+[2025-10-02 16:07:10] 👤 Fill in name  : SPRING ENTERPRISE
+[2025-10-02 16:07:10] ✅ - The names are at least 70% similar.
+[2025-10-02 16:07:11] 📸 Screenshot saved: /sdcard/Pictures/affinmax_confirm_custname_19.png
+[2025-10-02 16:07:11] ✅ Clicked Confirm button
+[2025-10-02 16:07:11] ✅ Finished adding beneficiary details 1
+[2025-10-02 16:07:11] ---------------------- Adding beneficiary details 2 ----------------------
+[2025-10-02 16:07:12] ✅ Clicked Add Beneficiary button
+[2025-10-02 16:07:13] ✅ Chosen beneficiary type
+[2025-10-02 16:07:13] ✅ Clicked dropdown button for transaction type
+[2025-10-02 16:07:14] ✅ Chosen transaction type
+[2025-10-02 16:07:15] ✅ Filled transaction amount
+[2025-10-02 16:07:15] ✅ Filled beneficiary account no
+[2025-10-02 16:07:16] ✅ Filled beneficiary name
+[2025-10-02 16:07:16] ✅ Clicked select beneficiary bank button
+[2025-10-02 16:07:16] 🔍 Selecting bank: RAZER MERCHANT SERVICES
+[2025-10-02 16:07:16] 🔍 Searching bank
+[2025-10-02 16:07:24] ✅ Selected RAZER MERCHANT SERVICES
+[2025-10-02 16:07:24] ✅ Resident option selected
+[2025-10-02 16:07:25] ✅ Scrolled down
+[2025-10-02 16:07:26] ✅ Filled recipient reference
+[2025-10-02 16:07:26] ✅ Clicked order details
+[2025-10-02 16:07:26] ✅ Clicked OK button on finish adding beneficiary
+[2025-10-02 16:07:27] ⚠️ Transaction not successful detected, skipping this beneficiary.
+[2025-10-02 16:07:27] ⚠️ Transaction ID: 20
+[2025-10-02 16:07:27] ⚠️ status: 4
+[2025-10-02 16:07:27] ⚠️ message: Invalid bank or account number.
+[2025-10-02 16:07:27] ⚠️ errorMessage: Invalid bank or account number.
+[2025-10-02 16:07:27] ✅ Clicked OK button on error dialog
+[2025-10-02 16:07:28] ✅ Clicked Back button
+[2025-10-02 16:07:28] ❌ Fail to add beneficiary
+[2025-10-02 16:07:28] ------------------ Finished filling beneficiary details ------------------
+[2025-10-02 16:07:28] ✅ Clicked Preview button
+[2025-10-02 16:07:29] ✅ Clicked t&c checkbox
+[2025-10-02 16:07:29] ✅ Clicked Submit button
+[2025-10-02 16:07:38] ✅ Clicked Approve button
+[2025-10-02 16:07:38] 👉 Filling transaction password...
+[2025-10-02 16:07:38] ✅ Filled transaction amount
+[2025-10-02 16:07:39] ✅ Clicked OK button
+[2025-10-02 16:07:41] ✅ Transfer successful, clicked Done button
+[2025-10-02 16:07:49] ✅ Clicked Download button
+[2025-10-02 16:07:49] ✅ Clicked OK button
+[2025-10-02 16:07:50] ✅ Navigated to Accounts tab
+[2025-10-02 16:07:54] ---------------------- Total runtime: 89.844 seconds ---------------------
+[2025-10-02 16:07:54] remaining balance: 165
+[2025-10-02 16:07:54] status: 2
+[2025-10-02 16:07:54] message: Transaction Success
+[2025-10-02 16:07:55] errorMessage: null
+[2025-10-02 16:07:57] --------------------------------------------------------------------------
+[2025-10-02 16:07:57] ✅ Closed affinmax app
+[2025-10-02 16:07:58] --------------------------------------------------------------------------
+[2025-10-02 16:08:58] Trigger pushed via WebSocket
+[2025-10-02 16:08:58] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": 0.7, "beneficiaries": [{"tran_id": "22", "amount": "15.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING ENTERPRISE", "bank_code": "49", "recRef": "Test"}, {"tran_id": "23", "amount": "20.00", "bene_acc_no": "81023098213", "bene_name": "Monkey.D.Luffy", "bank_code": "50", "recRef": "Test2"}]}}
+[2025-10-02 16:08:58] 🚀 Launching transfer.js...
+[2025-10-02 16:08:59] --------------------------------------------------------------------------
+[2025-10-02 16:08:59] Script run started at Thu Oct 02 2025 16:08:58 GMT+0800 (GMT+08:00)
+[2025-10-02 16:08:59] --------------------------------------------------------------------------
+[2025-10-02 16:08:59] ➡️ Beneficiary Details 1
+[2025-10-02 16:08:59]    Transfer ID     : 22
+[2025-10-02 16:08:59]    Name            : SPRING ENTERPRISE
+[2025-10-02 16:08:59]    Account No      : 20206900069899
+[2025-10-02 16:08:59]    Transfer Amount : 15.00
+[2025-10-02 16:08:59]    Bank Code       : 49
+[2025-10-02 16:08:59] --------------------------------------------------------------------------
+[2025-10-02 16:08:59] ➡️ Beneficiary Details 2
+[2025-10-02 16:08:59]    Transfer ID     : 23
+[2025-10-02 16:08:59]    Name            : Monkey.D.Luffy
+[2025-10-02 16:08:59]    Account No      : 81023098213
+[2025-10-02 16:09:00]    Transfer Amount : 20.00
+[2025-10-02 16:09:00]    Bank Code       : 50
+[2025-10-02 16:09:00] --------------------------------------------------------------------------
+[2025-10-02 16:09:00] ✅ Opened AffinMax app
+[2025-10-02 16:09:03] ✅ Filled corporate ID
+[2025-10-02 16:09:04] ✅ Filled user ID
+[2025-10-02 16:09:04] ✅ Clicked next button
+[2025-10-02 16:09:04] 👉 Filling login password...
+[2025-10-02 16:09:14] ---------------------- Total runtime: 15.659 seconds ---------------------
+[2025-10-02 16:09:14] remaining balance: null
+[2025-10-02 16:09:14] status: 3
+[2025-10-02 16:09:14] message: Something went wrong
+[2025-10-02 16:09:14] errorMessage: Automation fail at fill_password
+[2025-10-02 16:10:17] Trigger pushed via WebSocket
+[2025-10-02 16:10:17] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": 0.7, "beneficiaries": [{"tran_id": "24", "amount": "15.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING ENTERPRISE", "bank_code": "49", "recRef": "Test"}, {"tran_id": "25", "amount": "20.00", "bene_acc_no": "81023098213", "bene_name": "Monkey.D.Luffy", "bank_code": "50", "recRef": "Test2"}]}}
+[2025-10-02 16:10:17] 🚀 Launching transfer.js...
+[2025-10-02 16:10:17] --------------------------------------------------------------------------
+[2025-10-02 16:10:17] Script run started at Thu Oct 02 2025 16:10:17 GMT+0800 (GMT+08:00)
+[2025-10-02 16:10:17] --------------------------------------------------------------------------
+[2025-10-02 16:10:17] ➡️ Beneficiary Details 1
+[2025-10-02 16:10:18]    Transfer ID     : 24
+[2025-10-02 16:10:18]    Name            : SPRING ENTERPRISE
+[2025-10-02 16:10:18]    Account No      : 20206900069899
+[2025-10-02 16:10:18]    Transfer Amount : 15.00
+[2025-10-02 16:10:18]    Bank Code       : 49
+[2025-10-02 16:10:18] --------------------------------------------------------------------------
+[2025-10-02 16:10:18] ➡️ Beneficiary Details 2
+[2025-10-02 16:10:18]    Transfer ID     : 25
+[2025-10-02 16:10:18]    Name            : Monkey.D.Luffy
+[2025-10-02 16:10:19]    Account No      : 81023098213
+[2025-10-02 16:10:19]    Transfer Amount : 20.00
+[2025-10-02 16:10:19]    Bank Code       : 50
+[2025-10-02 16:10:19] --------------------------------------------------------------------------
+[2025-10-02 16:10:19] ✅ Opened AffinMax app
+[2025-10-02 16:10:24] ✅ Filled corporate ID
+[2025-10-02 16:10:25] ✅ Filled user ID
+[2025-10-02 16:10:25] ✅ Clicked next button
+[2025-10-02 16:10:25] 👉 Filling login password...
+[2025-10-02 16:10:26] ✅ Password filled
+[2025-10-02 16:10:27] ✅ Clicked login button
+[2025-10-02 16:10:35] ✅ Clicked Show Balance button
+[2025-10-02 16:10:36] 💰 Current balance: 165 | Total transfer amount: 35
+[2025-10-02 16:10:36] ✅ Balance is sufficient, continue transfer
+[2025-10-02 16:10:36] ✅ Clicked DuitNow button
+[2025-10-02 16:10:37] ✅ Clicked DuitNow Transfer button
+[2025-10-02 16:10:38] ✅ Clicked Pay to Account button
+[2025-10-02 16:10:38] ✅ Clicked New Transfer button
+[2025-10-02 16:10:39] ✅ Bank selection button found
+[2025-10-02 16:10:39] ✅ Clicked dropdown button
+[2025-10-02 16:10:40] ✅ Chosen debit from account no./currency
+[2025-10-02 16:10:40] ---------------------- Adding beneficiary details 1 ----------------------
+[2025-10-02 16:10:40] ✅ Clicked Add Beneficiary button
+[2025-10-02 16:10:41] ❌ Not on Beneficiary page, cannot proceed.
+[2025-10-02 16:10:43] ✅ Chosen beneficiary type
+[2025-10-02 16:10:43] ✅ Clicked dropdown button for transaction type
+[2025-10-02 16:10:44] ✅ Chosen transaction type
+[2025-10-02 16:10:45] ✅ Filled transaction amount
+[2025-10-02 16:10:45] ✅ Filled beneficiary account no
+[2025-10-02 16:10:55] ---------------------- Total runtime: 38.15 seconds ---------------------
+[2025-10-02 16:10:55] remaining balance: 165
+[2025-10-02 16:10:56] status: 3
+[2025-10-02 16:10:56] message: Something went wrong
+[2025-10-02 16:10:56] errorMessage: Automation fail at beneficiary_details
+[2025-10-02 16:14:51] Trigger pushed via WebSocket
+[2025-10-02 16:14:51] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": 0.7, "beneficiaries": [{"tran_id": "26", "amount": "15.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING ENTERPRISE", "bank_code": "49", "recRef": "Test"}, {"tran_id": "27", "amount": "20.00", "bene_acc_no": "81023098213", "bene_name": "Monkey.D.Luffy", "bank_code": "50", "recRef": "Test2"}]}}
+[2025-10-02 16:14:51] 🚀 Launching transfer.js...
+[2025-10-02 16:14:51] --------------------------------------------------------------------------
+[2025-10-02 16:14:51] Script run started at Thu Oct 02 2025 16:14:51 GMT+0800 (GMT+08:00)
+[2025-10-02 16:14:51] --------------------------------------------------------------------------
+[2025-10-02 16:14:52] ➡️ Beneficiary Details 1
+[2025-10-02 16:14:52]    Transfer ID     : 26
+[2025-10-02 16:14:52]    Name            : SPRING ENTERPRISE
+[2025-10-02 16:14:52]    Account No      : 20206900069899
+[2025-10-02 16:14:52]    Transfer Amount : 15.00
+[2025-10-02 16:14:52]    Bank Code       : 49
+[2025-10-02 16:14:52] --------------------------------------------------------------------------
+[2025-10-02 16:14:52] ➡️ Beneficiary Details 2
+[2025-10-02 16:14:52]    Transfer ID     : 27
+[2025-10-02 16:14:52]    Name            : Monkey.D.Luffy
+[2025-10-02 16:14:52]    Account No      : 81023098213
+[2025-10-02 16:14:52]    Transfer Amount : 20.00
+[2025-10-02 16:14:53]    Bank Code       : 50
+[2025-10-02 16:14:53] --------------------------------------------------------------------------
+[2025-10-02 16:14:53] ✅ Opened AffinMax app
+[2025-10-02 16:14:57] ✅ Filled corporate ID
+[2025-10-02 16:14:57] ✅ Filled user ID
+[2025-10-02 16:14:57] ✅ Clicked next button
+[2025-10-02 16:14:57] 👉 Filling login password...
+[2025-10-02 16:14:58] ✅ Password filled
+[2025-10-02 16:14:58] ✅ Clicked login button
+[2025-10-02 16:15:10] ✅ Clicked Show Balance button
+[2025-10-02 16:15:11] 💰 Current balance: 165 | Total transfer amount: 35
+[2025-10-02 16:15:11] ✅ Balance is sufficient, continue transfer
+[2025-10-02 16:15:11] ✅ Clicked DuitNow button
+[2025-10-02 16:15:52] ✅ Bank selection button found
+[2025-10-02 16:16:02] ---------------------- Total runtime: 70.803 seconds ---------------------
+[2025-10-02 16:16:02] remaining balance: 165
+[2025-10-02 16:16:02] status: 3
+[2025-10-02 16:16:02] message: Something went wrong
+[2025-10-02 16:16:02] errorMessage: Automation fail at transaction_details
+[2025-10-02 16:16:05] --------------------------------------------------------------------------
+[2025-10-02 16:16:05] ✅ Closed affinmax app
+[2025-10-02 16:16:05] --------------------------------------------------------------------------
+[2025-10-02 16:24:21] Trigger pushed via WebSocket
+[2025-10-02 16:24:21] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": 0.7, "beneficiaries": [{"tran_id": "28", "amount": "15.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING ENTERPRISE", "bank_code": "49", "recRef": "Test"}, {"tran_id": "29", "amount": "20.00", "bene_acc_no": "81023098213", "bene_name": "Monkey.D.Luffy", "bank_code": "50", "recRef": "Test2"}]}}
+[2025-10-02 16:24:21] 🚀 Launching transfer.js...
+[2025-10-02 16:24:21] --------------------------------------------------------------------------
+[2025-10-02 16:24:21] Script run started at Thu Oct 02 2025 16:24:21 GMT+0800 (GMT+08:00)
+[2025-10-02 16:24:21] --------------------------------------------------------------------------
+[2025-10-02 16:24:21] ➡️ Beneficiary Details 1
+[2025-10-02 16:24:21]    Transfer ID     : 28
+[2025-10-02 16:24:21]    Name            : SPRING ENTERPRISE
+[2025-10-02 16:24:21]    Account No      : 20206900069899
+[2025-10-02 16:24:21]    Transfer Amount : 15.00
+[2025-10-02 16:24:21]    Bank Code       : 49
+[2025-10-02 16:24:21] --------------------------------------------------------------------------
+[2025-10-02 16:24:21] ➡️ Beneficiary Details 2
+[2025-10-02 16:24:21]    Transfer ID     : 29
+[2025-10-02 16:24:21]    Name            : Monkey.D.Luffy
+[2025-10-02 16:24:22]    Account No      : 81023098213
+[2025-10-02 16:24:22]    Transfer Amount : 20.00
+[2025-10-02 16:24:22]    Bank Code       : 50
+[2025-10-02 16:24:22] --------------------------------------------------------------------------
+[2025-10-02 16:24:22] ✅ Opened AffinMax app
+[2025-10-02 16:24:25] ✅ Filled corporate ID
+[2025-10-02 16:24:26] ✅ Filled user ID
+[2025-10-02 16:24:26] ✅ Clicked next button
+[2025-10-02 16:24:26] 👉 Filling login password...
+[2025-10-02 16:24:29] ✅ Password filled
+[2025-10-02 16:24:29] ✅ Clicked login button
+[2025-10-02 16:24:59] ❌ Could not find balance element
+[2025-10-02 16:24:59] ---------------------- Total runtime: 37.719 seconds ---------------------
+[2025-10-02 16:24:59] remaining balance: null
+[2025-10-02 16:24:59] status: 4
+[2025-10-02 16:24:59] message: Insufficient balance
+[2025-10-02 16:24:59] errorMessage: Balance less than transfer amount
+[2025-10-02 16:25:06] ---------------------- Total runtime: 45.392 seconds ---------------------
+[2025-10-02 16:25:06] remaining balance: null
+[2025-10-02 16:25:07] status: 3
+[2025-10-02 16:25:07] message: Something went wrong
+[2025-10-02 16:25:07] errorMessage: Automation fail at check_balance
