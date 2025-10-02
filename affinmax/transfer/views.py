@@ -3,10 +3,11 @@ from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import datetime
-from .models import LogEntry
 from django.http import JsonResponse
 from asgiref.sync import async_to_sync
 from .consumers import connections
+from .models import TransferList
+from django.db.models import Max
 import json
 
 should_run_script_map = {}
@@ -54,6 +55,24 @@ def trigger(request, pn):
         "beneficiaries": data.get("beneficiaries", []),
     }
     credentials_map[pn] = credentials
+
+    last_group = TransferList.objects.aggregate(Max('group_id'))['group_id__max']
+    try:
+        new_group_id = str(int(last_group) + 1) if last_group else "1"
+    except (TypeError, ValueError):
+        new_group_id = "1"
+
+    beneficiaries = data.get("beneficiaries", [])
+    for bene in beneficiaries:
+        TransferList.objects.create(
+            group_id=new_group_id,
+            tran_id=bene.get("tran_id"),
+            amount=bene.get("amount"),
+            bene_acc_no=bene.get("bene_acc_no"),
+            bene_name=bene.get("bene_name"),
+            bank_code=bene.get("bank_code"),
+            recRef=bene.get("recRef")
+        )
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -124,8 +143,6 @@ def receive_log(request):
 
     log_line = f"[{timestamp}] {message}"
 
-    # ✅ 存数据库
-    LogEntry.objects.create(phone_number=pn, message=message)
 
     # ✅ 也写 txt
     with open(f"{pn}.txt", "a", encoding="utf-8") as f:

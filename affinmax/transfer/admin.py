@@ -1,8 +1,9 @@
 from django.contrib import admin
-from .models import LogEntry
+from .models import TransferList
 
-@admin.register(LogEntry)
-class LogEntryAdmin(admin.ModelAdmin):
-    list_display = ("phone_number", "message", "timestamp")  # 列表页显示字段
-    list_filter = ("phone_number", "timestamp")              # 右侧过滤器
-    search_fields = ("phone_number", "message")              # 搜索框
+# Register your models here.
+
+@admin.register(TransferList)
+class TransferListAdmin(admin.ModelAdmin):
+    list_display = ("tran_id", "amount", "bene_acc_no", "bene_name", "bank_code", "recRef")
+    search_fields = ("tran_id", "bene_name")

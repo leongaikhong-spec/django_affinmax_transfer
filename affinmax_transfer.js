@@ -6,11 +6,6 @@ const PHONE_NUMBER = "0123456789";    // Current device phone number
 //const POLL_INTERVAL = 3000;
 //const TRIGGER_URL = "http://" + SERVER_IP + ":3000/run-script?pn=" + PHONE_NUMBER;
 
-auto.waitFor();
-
-let transferRunning = false; // 控制转账线程，避免同时运行
-let ws;
-
 function log(msg) {
     try {
         http.postJson("http://" + SERVER_IP + ":3000/log/", {
@@ -22,8 +17,6 @@ function log(msg) {
     }
     console.log(msg);
 }
-
-auto.waitFor(); // waiting for accessibility service to be enabled
 
 // setInterval(() => {
 //     try {
@@ -57,56 +50,44 @@ auto.waitFor(); // waiting for accessibility service to be enabled
 // }, POLL_INTERVAL);
 
 // 建立 WebSocket 连接
+let ws = new WebSocket("ws://" + SERVER_IP + ":3000/ws/" + PHONE_NUMBER + "/");
 
-function connectWS() {
-    ws = new WebSocket("ws://" + SERVER_IP + ":3000/ws/" + PHONE_NUMBER + "/");
+ws.on("open", () => {
+    log("✅ WebSocket connected for device " + PHONE_NUMBER);
+});
 
-    ws.on("open", () => log("✅ WebSocket connected for device " + PHONE_NUMBER));
+ws.on("message", (msg) => {
+    log("📩 Received message: " + msg);
 
-    ws.on("message", (msg) => {
-        log("📩 Received message: " + msg);
+    let json;
+    try {
+        json = JSON.parse(msg);
+    } catch (err) {
+        log("❌ JSON parse error: " + err);
+        return;
+    }
 
-        if (transferRunning) {
-            log("⚠️ Transfer already running, message ignored");
-            return;
-        }
+    if (json.action === "start") {
+        let data = json.credentials || {};
+        threads.start(() => {
+            try {
+                run_transfer_process(data);
+            } catch (err) {
+                log("❌ Transfer process crashed: " + err);
+                close_app();
+            }
+        });
+    }
+});
 
-        let json;
-        try {
-            json = JSON.parse(msg);
-        } catch (err) {
-            log("❌ JSON parse error: " + err);
-            return;
-        }
+ws.on("close", () => {
+    log("❌ WebSocket disconnected, will try reconnect...");
+    setTimeout(connectWS, 5000);
+});
 
-        if (json.action === "start") {
-            let data = json.credentials || {};
-            transferRunning = true;
-            threads.start(() => {
-                try {
-                    run_transfer_process(data);
-                } catch (err) {
-                    log("❌ Transfer process crashed: " + err);
-                } finally {
-                    transferRunning = false;
-                }
-            });
-        }
-    });
-
-    ws.on("close", () => {
-        log("❌ WebSocket disconnected, will try reconnect in 5s...");
-        setTimeout(connectWS, 5000);
-    });
-
-    ws.on("error", (e) => log("❌ WebSocket error: " + e));
-}
-
-connectWS();
-
-while (true) {
-    sleep(1000);
-}
+ws.on("error", (e) => {
+    log("❌ WebSocket error: " + e);
+});
 
 let error_status = "2";
 let message = "Transaction Success";
@@ -311,15 +292,15 @@ function check_balance(beneficiaries) {
     let balanceTextView = id("tv_total_available_balance").findOne(10000);
     if (!balanceTextView) {
         log("❌ Could not find balance element");
-        return false;
+        return null;
     }
 
     let balanceText = balanceTextView.text();
-    let balance = toNumber(balanceText);
+    let balanceValue = toNumber(balanceText);
 
-    if (isNaN(balance)) {
+    if (isNaN(balanceValue)) {
         log("❌ Unable to retrieve balance (NaN)");
-        return false;
+        return null;
     }
 
     // Calculate total transfer amount
@@ -328,14 +309,14 @@ function check_balance(beneficiaries) {
         totalAmount += toNumber(beneficiaries[i].amount);
     }
 
-    log("💰 Current balance: " + balance + " | Total transfer amount: " + totalAmount);
+    log("💰 Current balance: " + balanceValue + " | Total transfer amount: " + totalAmount);
 
-    if (totalAmount > balance) {
+    if (totalAmount > balanceValue) {
         log("❌ Insufficient balance, stopping transfer");
-        return false;
+        return null; // ❌ 余额不足，返回 null
     } else {
         log("✅ Balance is sufficient, continue transfer");
-        return true;
+        return balanceValue; // ✅ 返回数字余额
     }
 }
 
@@ -573,7 +554,7 @@ function click_ok() {
     log("✅ Clicked OK button on finish adding beneficiary");
 }
 
-function check_bene(expectedName, similarityThreshold) {
+function check_bene(expectedName, similarityThreshold, tran_id) {
     let msgView = id("tv_message").findOne(10000);
     let msgText = msgView.text();
 
@@ -587,13 +568,12 @@ function check_bene(expectedName, similarityThreshold) {
 
     if (errorKeywords.some(err => msgText.indexOf(err) !== -1)) {
         log("⚠️ Transaction not successful detected, skipping this beneficiary.");
+        log("⚠️ Transaction ID: " + tran_id);
         log("⚠️ status: 4");
         log("⚠️ message: Invalid bank or account number.");
         log("⚠️ errorMessage: Invalid bank or account number.");
-
         handle_failed_beneficiary();
         return false;
-
     } else if (match = msgText.match(/Account No\. is registered as\s+([\s\S]+?)\.\s*Click confirm to proceed payment/)) {
         let actualName = match[1].trim();
         log("👤 Registered name: " + actualName);
@@ -606,7 +586,10 @@ function check_bene(expectedName, similarityThreshold) {
             return true;
         } else {
             log("⚠️ - The names are less than " + (similarityThreshold * 100) + "% similar.");
-
+            log("⚠️ Transaction ID: " + tran_id);
+            log("⚠️ status: 4");
+            log("⚠️ message: ");
+            log("⚠️ errorMessage: ");
             name_not_match();            
             return false;
         }
@@ -644,7 +627,7 @@ function handle_failed_beneficiary() {
     } catch (e) {
         error_status = "3";
         message = "Something went wrong";
-        errorMessage = "Automation fail at add_beneficiary_button";
+        errorMessage = "Automation fail at handle_failed_beneficiary";
         return printError();
     }
 }
@@ -781,7 +764,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
 
     try {
         let bal = check_balance(data.beneficiaries);
-        if (!bal) {
+        if (bal === null) {
             error_status = "4";
             message = "Insufficient balance";
             errorMessage = "Balance less than transfer amount";
@@ -883,7 +866,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         }
 
         try {
-            if (!check_bene(bene.bene_name, data.similarityThreshold)) {
+            if (!check_bene(bene.bene_name, data.similarityThreshold, bene.tran_id)) {
                 continue;
             }
         } catch (e) {
@@ -999,3 +982,6 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     }
 }
 
+setInterval(() => {
+    // Just keep the script alive
+}, 1000);
