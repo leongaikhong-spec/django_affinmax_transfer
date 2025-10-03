@@ -22,13 +22,13 @@ import json
             "password": openapi.Schema(type=openapi.TYPE_STRING),
             "tran_pass": openapi.Schema(type=openapi.TYPE_STRING),
             "current_balance": openapi.Schema(type=openapi.TYPE_STRING),
-            "is_online": openapi.Schema(type=openapi.TYPE_INTEGER, description="1=开, 0=关"),
-            "is_activated": openapi.Schema(type=openapi.TYPE_INTEGER, description="1=开, 0=关"),
-            "is_busy": openapi.Schema(type=openapi.TYPE_INTEGER, description="1=开, 0=关"),
+            "is_online": openapi.Schema(type=openapi.TYPE_INTEGER, description="1=open, 0=close"),
+            "is_activated": openapi.Schema(type=openapi.TYPE_INTEGER, description="1=open, 0=close"),
+            "is_busy": openapi.Schema(type=openapi.TYPE_INTEGER, description="1=open, 0=close"),
             "last_error": openapi.Schema(type=openapi.TYPE_STRING),
             "log_file": openapi.Schema(type=openapi.TYPE_STRING),
         },
-        required=["phone_number"],
+        required=["phone_number", "corp_id", "user_id", "password", "tran_pass", "current_balance", "is_online", "is_activated", "is_busy", "log_file"],
     ),
     responses={200: "Mobile created"},
 )
@@ -83,7 +83,7 @@ credentials_map = {}
                 )
             )
         },
-        required=["corp_id", "user_id", "password"],
+        required=["tran_id", "amount", "bene_acc_no", "bene_name", "bank_code", "recRef"],
     ),
     responses={200: "Trigger set"},
 )
