@@ -496,11 +496,12 @@ function check_bene(expectedName, similarityThreshold, tran_id) {
     ];
 
     if (errorKeywords.some(err => msgText.indexOf(err) !== -1)) {
-        log("⚠️ Transaction not successful detected, skipping this beneficiary.");
-        log("⚠️ Transaction ID: " + tran_id);
-        log("⚠️ status: 4");
-        log("⚠️ message: Invalid bank or account number.");
-        log("⚠️ errorMessage: Invalid bank or account number.");
+        log(JSON.stringify({
+            status: 4,
+            tran_id: tran_id,
+            message: "Invalid bank or account number.",
+            errorMessage: "Invalid bank or account number."
+        }));
         handle_failed_beneficiary();
         return false;
     } else if (match = msgText.match(/Account No\. is registered as\s+([\s\S]+?)\.\s*Click confirm to proceed payment/)) {
@@ -514,11 +515,12 @@ function check_bene(expectedName, similarityThreshold, tran_id) {
             log("✅ - The names are at least " + (similarityThreshold * 100) + "% similar.");
             return true;
         } else {
-            log("⚠️ - The names are less than " + (similarityThreshold * 100) + "% similar.");
-            log("⚠️ Transaction ID: " + tran_id);
-            log("⚠️ status: 4");
-            log("⚠️ message: ");
-            log("⚠️ errorMessage: ");
+            log(JSON.stringify({
+                status: 4,
+                tran_id: tran_id,
+                message: "Name similarity below threshold.",
+                errorMessage: `Expected: ${expectedName}, Actual: ${actualName}`
+            }));
             name_not_match();            
             return false;
         }
@@ -887,10 +889,12 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         let runtime = (new Date() - start_time) / 1000;
         let balance = grab_balance();
         log("-".repeat(22) + ` Total runtime: ${runtime} seconds ` + "-".repeat(21));
-        log("remaining balance: " + balance);
-        log("status: " + error_status);
-        log("message: " + message);
-        log("errorMessage: " + errorMessage);
+        log(JSON.stringify({
+            status: error_status,
+            message: message,
+            errorMessage: errorMessage,
+            balance: balance
+        }));
 
         return close_app();
     } catch (e) {
@@ -903,10 +907,12 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     function printError() {
         let runtime = (new Date() - start_time) / 1000;
         log("-".repeat(22) + ` Total runtime: ${runtime} seconds ` + "-".repeat(21));
-        log("remaining balance: " + balance);
-        log("status: " + error_status);
-        log("message: " + message);
-        log("errorMessage: " + errorMessage);
+        log(JSON.stringify({
+            status: error_status,
+            message: message,
+            errorMessage: errorMessage,
+            balance: balance
+        }));
         return close_app();
     }
 }

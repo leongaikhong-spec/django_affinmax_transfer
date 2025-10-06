@@ -18,22 +18,44 @@ function log(msg) {
 
 let ws;
 let isConnected = false;
+let heartbeatInterval = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT = 20;
 
 function connectWebSocket(onMessageCallback) {
+    if (ws && ws.readyState === 1) {
+        // 已连接，无需重复连接
+        return;
+    }
     ws = new WebSocket("ws://" + SERVER_IP + ":3000/ws/" + PHONE_NUMBER + "/");
     ws.on("open", () => {
         isConnected = true;
-
+        reconnectAttempts = 0;
         log("");
         log("✅ WebSocket connected");
         log("");
+        // 启动心跳
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        heartbeatInterval = setInterval(() => {
+            if (ws && ws.readyState === 1) {
+                ws.send(JSON.stringify({type: "ping", device: PHONE_NUMBER}));
+            }
+        }, 15000); // 每 15 秒心跳
     });
     ws.on("close", () => {
         isConnected = false;
         log("❌ WebSocket disconnected, retrying...");
-        setTimeout(() => connectWebSocket(onMessageCallback), 5000);
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        if (reconnectAttempts < MAX_RECONNECT) {
+            reconnectAttempts++;
+            setTimeout(() => connectWebSocket(onMessageCallback), 2000 * reconnectAttempts); // 指数退避
+        } else {
+            log("❌ Too many reconnect attempts, please check network or server.");
+        }
     });
     ws.on("message", (msg) => {
+        // 过滤心跳回复
+        if (msg === "pong" || msg === "ping") return;
         log("📩 Received message: " + msg);
         let json;
         try {

@@ -28,6 +28,26 @@ def log(request):
     timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(f"{timestamp} {msg}\n")
+
+    # 自动同步 status 到 TransferList
+    try:
+        msg_json = json.loads(msg)
+        tran_id = msg_json.get('tran_id')
+        status = msg_json.get('status')
+        error_message = msg_json.get('errorMessage')
+        # 只处理有 tran_id 且 status 的日志
+        if tran_id and status is not None:
+            qs = TransferList.objects.filter(tran_id=tran_id)
+            if qs.exists():
+                obj = qs.first()
+                obj.status = str(status)
+                if error_message:
+                    obj.error_message = str(error_message)
+                obj.save()
+    except Exception as e:
+        # 非结构化日志或解析失败，跳过
+        pass
+
     return Response({"status": "ok"})
 
 
@@ -140,7 +160,7 @@ def trigger(request):
     # 保存每个 beneficiary 到 TransferList
     for bene in beneficiaries:
         TransferList.objects.create(
-            group=group_obj,  # 不是 group_id=group_id，也不是 group_id=group_obj.id
+            group=group_obj,
             tran_id=bene.get("tran_id"),
             amount=bene.get("amount"),
             bene_acc_no=bene.get("bene_acc_no"),
@@ -148,7 +168,7 @@ def trigger(request):
             bank_code=bene.get("bank_code"),
             recRef=bene.get("recRef"),
             phone_number=pn,
-            status=bene.get("success", "fail")
+            status=bene.get("status", "1")
         )
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
