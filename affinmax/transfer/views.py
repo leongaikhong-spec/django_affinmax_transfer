@@ -54,7 +54,7 @@ def create_mobile(request):
     return Response({"status": "ok", "created": created})
 
 
-should_run_script_map = {}
+
 credentials_map = {}
 
 # ========== trigger ==========
@@ -134,63 +134,12 @@ def trigger(request, pn):
             f.write(log_msg + "\n")
         return JsonResponse({"message": f"Task pushed to {pn} (via WebSocket)"})
 
-    # ❌ 如果设备不在线，走原有轮询机制
-    should_run_script_map[pn] = True
+    # ❌ 如果设备不在线，走原有轮询机制（仅写日志，不再设置 should_run_script_map）
     with open(f"{pn}.txt", "a", encoding="utf-8") as f:
         f.write(f"\n[{timestamp}] Trigger stored (waiting for pull)\n")
 
     return Response({"message": f"Trigger stored for {pn}"})
 
 
-# ========== run_script ==========
-@swagger_auto_schema(
-    method="get",
-    manual_parameters=[
-        openapi.Parameter("pn", openapi.IN_QUERY, description="Phone number", type=openapi.TYPE_STRING),
-    ],
-    responses={200: "Script action"},
-)
-@api_view(["GET"])
-def run_script(request):
-    pn = request.GET.get("pn")
-    if not pn:
-        return Response({"error": "Missing phone number (pn)"}, status=400)
-
-    if should_run_script_map.get(pn):
-        should_run_script_map[pn] = False
-        return Response({
-            "action": "start",
-            "credentials": credentials_map.get(pn)
-        })
-    else:
-        return Response({"action": "wait"})
 
 
-# ========== receive_log ==========
-@swagger_auto_schema(
-    method="post",
-    request_body=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        properties={
-            "pn": openapi.Schema(type=openapi.TYPE_STRING),
-            "message": openapi.Schema(type=openapi.TYPE_STRING),
-        },
-        required=["pn", "message"],
-    ),
-    responses={200: "Log stored"},
-)
-@api_view(["POST"])
-def receive_log(request):
-    data = request.data
-    pn = data.get("pn", "unknown")
-    message = data.get("message", "")
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    log_line = f"[{timestamp}] {message}"
-
-
-    # ✅ 也写 txt
-    with open(f"{pn}.txt", "a", encoding="utf-8") as f:
-        f.write(log_line + "\n")
-
-    return Response({"status": "ok"})

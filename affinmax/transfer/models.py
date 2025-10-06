@@ -1,5 +1,18 @@
 from django.db import models
 
+class TransferGroupList(models.Model):
+    related_tran_id = models.CharField(max_length=50)
+    total_tran_amount = models.CharField(max_length=50)
+    success_tran_amount = models.CharField(max_length=50)
+    current_balance = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "transfer_group_list"
+
+    def __str__(self):
+        return f"Group {self.related_tran_id}" 
 
 
 class TransferList(models.Model):
@@ -13,6 +26,9 @@ class TransferList(models.Model):
     recRef = models.CharField(max_length=100)
     #status = models.CharField(max_length=20)
     phone_number = models.CharField(max_length=20)
+    complete_date = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    error_message = models.TextField(null=True, blank=True)
     class Meta:
         db_table = "transfer_list"
 
@@ -20,9 +36,8 @@ class TransferList(models.Model):
         return f"{self.tran_id} - {self.bene_name}"
 
 
-# 新增 MobileList 模型，独立出来
 class MobileList(models.Model):
-    phone_number = models.CharField(max_length=20, unique=True)
+    device = models.CharField(max_length=20, unique=True)
     is_online = models.BooleanField(default=False)
     is_activated = models.BooleanField(default=False)
     is_busy = models.BooleanField(default=False)
