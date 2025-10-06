@@ -10,6 +10,27 @@ from .models import TransferList, MobileList
 from django.db.models import Max
 import json
 
+# ========== log ==========
+from rest_framework.decorators import api_view
+@api_view(["POST"])
+def log(request):
+    import os
+    log_data = request.data
+    log_dir = os.path.join(os.path.dirname(__file__), '../Log')
+    log_dir = os.path.abspath(log_dir)
+    os.makedirs(log_dir, exist_ok=True)
+    device_number = log_data.get('device')
+    if not device_number:
+        return Response({"error": "Missing device number (device/phone_number/device_number)"}, status=400)
+    log_file = os.path.join(log_dir, f'{device_number}.txt')
+    from datetime import datetime
+    msg = log_data.get('message', '')
+    timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+    with open(log_file, "a", encoding="utf-8") as f:
+        f.write(f"{timestamp} {msg}\n")
+    return Response({"status": "ok"})
+
+
 # ========== create_mobile ==========
 @swagger_auto_schema(
     method="post",
@@ -53,9 +74,8 @@ def create_mobile(request):
     mobile.save()
     return Response({"status": "ok", "created": created})
 
-
-
 credentials_map = {}
+
 
 # ========== trigger ==========
 @swagger_auto_schema(
@@ -63,14 +83,10 @@ credentials_map = {}
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
         properties={
-            "corp_id": openapi.Schema(type=openapi.TYPE_STRING),
-            "user_id": openapi.Schema(type=openapi.TYPE_STRING),
-            "password": openapi.Schema(type=openapi.TYPE_STRING),
-            "tranPass": openapi.Schema(type=openapi.TYPE_STRING),
             "similarityThreshold": openapi.Schema(type=openapi.TYPE_NUMBER),
             "beneficiaries": openapi.Schema(
                 type=openapi.TYPE_ARRAY,
-                items=openapi.Schema(   # ✅ 这里应该是 Schema，而不是 Items
+                items=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
                         "tran_id": openapi.Schema(type=openapi.TYPE_STRING),
@@ -83,33 +99,48 @@ credentials_map = {}
                 )
             )
         },
-        required=["tran_id", "amount", "bene_acc_no", "bene_name", "bank_code", "recRef"],
+        required=["similarityThreshold", "beneficiaries"],
     ),
     responses={200: "Trigger set"},
 )
 @api_view(["POST"])
-def trigger(request, pn):
+def trigger(request):
     data = request.data
+    # 查找可用 mobile（is_busy=0）
+    mobile = MobileList.objects.filter(is_busy=False).first()
+    if not mobile:
+        return Response({"error": "No available mobile device"}, status=400)
+
+    # 组装 credentials
     credentials = {
-        "corp_id": data.get("corp_id"),
-        "user_id": data.get("user_id"),
-        "password": data.get("password"),
-        "tranPass": data.get("tranPass"),
+        "corp_id": mobile.corp_id,
+        "user_id": mobile.user_id,
+        "password": mobile.password,
+        "tranPass": mobile.tran_pass,
         "similarityThreshold": data.get("similarityThreshold"),
         "beneficiaries": data.get("beneficiaries", []),
+        "log_file": mobile.log_file,
+        "device": mobile.device,
     }
-    credentials_map[pn] = credentials
+    pn = mobile.device
 
-    last_group = TransferList.objects.aggregate(Max('group_id'))['group_id__max']
-    try:
-        new_group_id = str(int(last_group) + 1) if last_group else "1"
-    except (TypeError, ValueError):
-        new_group_id = "1"
 
     beneficiaries = data.get("beneficiaries", [])
+    # 保存单次转账的 group 记录
+    from .models import TransferGroupList
+    related_tran_id = ",".join([str(b.get("tran_id")) for b in beneficiaries])
+    total_tran_amount = str(sum([float(b.get("amount",0)) for b in beneficiaries]))
+    group_obj = TransferGroupList.objects.create(
+        related_tran_id=related_tran_id,
+        total_tran_amount=total_tran_amount,
+        success_tran_amount="",
+        current_balance=""
+    )
+    group_id = str(group_obj.id)
+    # 保存每个 beneficiary 到 TransferList
     for bene in beneficiaries:
         TransferList.objects.create(
-            group_id=new_group_id,
+            group_id=group_id,
             tran_id=bene.get("tran_id"),
             amount=bene.get("amount"),
             bene_acc_no=bene.get("bene_acc_no"),
@@ -121,7 +152,7 @@ def trigger(request, pn):
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # ✅ 如果设备在线，直接通过 WebSocket 推送
+    # 只保留 WebSocket 推送和日志
     if pn in connections:
         async_to_sync(connections[pn].send)(
             text_data=json.dumps({
@@ -129,16 +160,17 @@ def trigger(request, pn):
                 "credentials": credentials,
             })
         )
-        log_msg = f"[{timestamp}] Trigger pushed via WebSocket"
-        with open(f"{pn}.txt", "a", encoding="utf-8") as f:
-            f.write(log_msg + "\n")
-        return JsonResponse({"message": f"Task pushed to {pn} (via WebSocket)"})
-
-    # ❌ 如果设备不在线，走原有轮询机制（仅写日志，不再设置 should_run_script_map）
-    with open(f"{pn}.txt", "a", encoding="utf-8") as f:
-        f.write(f"\n[{timestamp}] Trigger stored (waiting for pull)\n")
-
-    return Response({"message": f"Trigger stored for {pn}"})
+        import os
+        log_dir = os.path.join(os.path.dirname(__file__), '../Log')
+        log_dir = os.path.abspath(log_dir)
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = os.path.join(log_dir, f'{pn}.txt')
+        log_msg = f"[\n{timestamp}] Trigger pushed via WebSocket"
+        with open(log_file, "a", encoding="utf-8") as f:
+            f.write(log_msg)
+        return JsonResponse({"message": f"Task pushed to {pn}"})
+    else:
+        return Response({"error": f"Device {pn} not online"}, status=400)
 
 
 

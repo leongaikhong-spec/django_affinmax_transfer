@@ -24,7 +24,7 @@ class TransferList(models.Model):
     bene_name = models.CharField(max_length=100)
     bank_code = models.CharField(max_length=20)
     recRef = models.CharField(max_length=100)
-    #status = models.CharField(max_length=20)
+    status = models.CharField(max_length=20)
     phone_number = models.CharField(max_length=20)
     complete_date = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)

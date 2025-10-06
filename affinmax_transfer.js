@@ -7,7 +7,7 @@ const PHONE_NUMBER = "0123456789";    // Current device phone number
 function log(msg) {
     try {
         http.postJson("http://" + SERVER_IP + ":3000/log/", {
-            pn: PHONE_NUMBER,
+            device: PHONE_NUMBER,
             message: msg
         });
     } catch (e) {

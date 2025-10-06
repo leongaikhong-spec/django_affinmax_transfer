@@ -7,7 +7,7 @@ const PHONE_NUMBER = "0123456789";    // 你的设备号码
 function log(msg) {
     try {
         http.postJson("http://" + SERVER_IP + ":3000/log/", {
-            pn: PHONE_NUMBER,
+            device: PHONE_NUMBER,
             message: msg
         });
     } catch (e) {
@@ -16,13 +16,20 @@ function log(msg) {
     console.log(msg);
 }
 
-function startListener(onMessageCallback) {
-    let ws = new WebSocket("ws://" + SERVER_IP + ":3000/ws/" + PHONE_NUMBER + "/");
+let ws;
+let isConnected = false;
 
+function connectWebSocket(onMessageCallback) {
+    ws = new WebSocket("ws://" + SERVER_IP + ":3000/ws/" + PHONE_NUMBER + "/");
     ws.on("open", () => {
-        log("✅ WebSocket connected for device " + PHONE_NUMBER);
+        isConnected = true;
+        log("✅ WebSocket connected");
     });
-
+    ws.on("close", () => {
+        isConnected = false;
+        log("❌ WebSocket disconnected, retrying...");
+        setTimeout(() => connectWebSocket(onMessageCallback), 5000);
+    });
     ws.on("message", (msg) => {
         log("📩 Received message: " + msg);
         let json;
@@ -37,15 +44,14 @@ function startListener(onMessageCallback) {
             onMessageCallback(data);
         }
     });
-
-    ws.on("close", () => {
-        log("❌ WebSocket disconnected, retrying...");
-        setTimeout(() => startListener(onMessageCallback), 5000);
-    });
-
     ws.on("error", (e) => {
+        isConnected = false;
         log("❌ WebSocket error: " + e);
     });
+}
+
+function startListener(onMessageCallback) {
+    connectWebSocket(onMessageCallback);
 }
 
 // 启动 listener，收到消息时执行 transfer.js
