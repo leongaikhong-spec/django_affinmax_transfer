@@ -23,7 +23,10 @@ function connectWebSocket(onMessageCallback) {
     ws = new WebSocket("ws://" + SERVER_IP + ":3000/ws/" + PHONE_NUMBER + "/");
     ws.on("open", () => {
         isConnected = true;
+
+        log("");
         log("✅ WebSocket connected");
+        log("");
     });
     ws.on("close", () => {
         isConnected = false;
@@ -54,15 +57,28 @@ function startListener(onMessageCallback) {
     connectWebSocket(onMessageCallback);
 }
 
-// 启动 listener，收到消息时执行 transfer.js
+// 启动 listener，收到消息时执行 transfer.js，先检查连接状态
 startListener((data) => {
-    log("🚀 Launching transfer.js...");
-    let jsonString = JSON.stringify(data);
-    engines.execScript("Transfer Script", `
-        let data = ${jsonString};
-        let transfer = require("./affinmax_transfer.js");
-        transfer.run_transfer_process(data);
-    `);
+    if (!isConnected || !ws || ws.readyState !== 1) {
+        log("❌ WebSocket not connected, retrying before running transfer.js...");
+        connectWebSocket((reData) => {
+            log("✅ Reconnected, running transfer.js...");
+            let jsonString = JSON.stringify(reData);
+            engines.execScript("Transfer Script", `
+                let data = ${jsonString};
+                let transfer = require("./affinmax_transfer.js");
+                transfer.run_transfer_process(data);
+            `);
+        });
+    } else {
+        log("🚀 Launching transfer.js...");
+        let jsonString = JSON.stringify(data);
+        engines.execScript("Transfer Script", `
+            let data = ${jsonString};
+            let transfer = require("./affinmax_transfer.js");
+            transfer.run_transfer_process(data);
+        `);
+    }
 });
 
 // 防止退出

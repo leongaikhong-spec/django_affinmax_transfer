@@ -646,3 +646,76 @@
 [2025-10-06 15:39:41] status: 3
 [2025-10-06 15:39:41] message: Something went wrong
 [2025-10-06 15:39:41] errorMessage: Automation fail at add_beneficiary_button
+[2025-10-06 16:56:00] ✅ WebSocket connected
+[2025-10-06 16:58:28] 
+✅ WebSocket connected
+
+[2025-10-06 16:59:19] 
+[2025-10-06 16:59:19] ✅ WebSocket connected
+[2025-10-06 16:59:19] 
+[2025-10-06 16:59:43] 
+[2025-10-06 16:59:43] ✅ WebSocket connected
+[2025-10-06 16:59:48] 
+[2025-10-06 16:59:48] ✅ WebSocket connected
+[2025-10-06 17:35:54] 
+[2025-10-06 17:35:54] ✅ WebSocket connected
+[
+2025-10-06 17:36:08] Trigger pushed via WebSocket[2025-10-06 17:36:08] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": "0.7", "beneficiaries": [{"tran_id": "5", "amount": "10.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING ENTERPRISE", "bank_code": "49", "recRef": "Test"}, {"tran_id": "6", "amount": "10.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING ENTERPRISE", "bank_code": "49", "recRef": "Test"}], "log_file": "0123456789.txt", "device": "0123456789"}}
+[2025-10-06 17:36:08] ❌ WebSocket not connected, retrying before running transfer.js...
+[2025-10-06 17:36:08] 
+[2025-10-06 17:36:09] ✅ WebSocket connected
+[
+2025-10-06 17:38:02] Trigger pushed via WebSocket[2025-10-06 17:38:02] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": "0.7", "beneficiaries": [{"tran_id": "7", "amount": "10.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING ENTERPRISE", "bank_code": "49", "recRef": "Test"}, {"tran_id": "8", "amount": "10.00", "bene_acc_no": "20206900069899", "bene_name": "SPRING ENTERPRISE", "bank_code": "49", "recRef": "Test"}], "log_file": "0123456789.txt", "device": "0123456789"}}
+[2025-10-06 17:38:02] ✅ Reconnected, running transfer.js...
+[2025-10-06 17:38:02] --------------------------------------------------------------------------
+[2025-10-06 17:38:03] Script run started at Mon Oct 06 2025 17:38:02 GMT+0800 (GMT+08:00)
+[2025-10-06 17:38:03] --------------------------------------------------------------------------
+[2025-10-06 17:38:03] ➡️ Beneficiary Details 1
+[2025-10-06 17:38:03]    Transfer ID     : 7
+[2025-10-06 17:38:03]    Name            : SPRING ENTERPRISE
+[2025-10-06 17:38:04]    Account No      : 20206900069899
+[2025-10-06 17:38:04]    Transfer Amount : 10.00
+[2025-10-06 17:38:04]    Bank Code       : 49
+[2025-10-06 17:38:04] --------------------------------------------------------------------------
+[2025-10-06 17:38:04] ➡️ Beneficiary Details 2
+[2025-10-06 17:38:04]    Transfer ID     : 8
+[2025-10-06 17:38:05]    Name            : SPRING ENTERPRISE
+[2025-10-06 17:38:05]    Account No      : 20206900069899
+[2025-10-06 17:38:05]    Transfer Amount : 10.00
+[2025-10-06 17:38:05]    Bank Code       : 49
+[2025-10-06 17:38:05] --------------------------------------------------------------------------
+[2025-10-06 17:38:05] ✅ Opened AffinMax app
+[2025-10-06 17:38:10] ✅ Filled corporate ID
+[2025-10-06 17:38:10] ✅ Filled user ID
+[2025-10-06 17:38:10] ✅ Clicked next button
+[2025-10-06 17:38:10] 👉 Filling login password...
+[2025-10-06 17:38:12] ✅ Password filled
+[2025-10-06 17:38:13] ✅ Clicked login button
+[2025-10-06 17:38:21] ✅ Clicked Show Balance button
+[2025-10-06 17:38:22] 💰 Current balance: 300 | Total transfer amount: 20
+[2025-10-06 17:38:22] ✅ Balance is sufficient, continue transfer
+[2025-10-06 17:38:22] ✅ Clicked DuitNow button
+[2025-10-06 17:38:24] ✅ Clicked DuitNow Transfer button
+[2025-10-06 17:38:25] ✅ Clicked Pay to Account button
+[2025-10-06 17:38:26] ✅ Clicked New Transfer button
+[2025-10-06 17:38:29] ✅ Bank selection button found
+[2025-10-06 17:38:29] ✅ Clicked dropdown button
+[2025-10-06 17:38:30] ✅ Chosen debit from account no./currency
+[2025-10-06 17:38:30] ---------------------- Adding beneficiary details 1 ----------------------
+[2025-10-06 17:38:30] ✅ Clicked Add Beneficiary button
+[2025-10-06 17:38:34] ✅ Chosen beneficiary type
+[2025-10-06 17:38:34] ✅ Clicked dropdown button for transaction type
+[2025-10-06 17:38:35] ✅ Chosen transaction type
+[2025-10-06 17:38:36] ✅ Filled transaction amount
+[2025-10-06 17:38:37] ✅ Filled beneficiary account no
+[2025-10-06 17:38:37] ✅ Filled beneficiary name
+[2025-10-06 17:38:37] ✅ Clicked select beneficiary bank button
+[2025-10-06 17:38:37] 🔍 Selecting bank: RHB BANK
+[2025-10-06 17:38:37] 🔍 Searching bank
+[2025-10-06 17:38:57] ❌ Load More button not found
+[2025-10-06 17:38:57] ❌ Bank not found: RHB BANK
+[2025-10-06 17:39:07] ---------------------- Total runtime: 64.405 seconds ---------------------
+[2025-10-06 17:39:07] remaining balance: 300
+[2025-10-06 17:39:07] status: 3
+[2025-10-06 17:39:07] message: Something went wrong
+[2025-10-06 17:39:07] errorMessage: Automation fail at resident_option

@@ -128,26 +128,27 @@ def trigger(request):
     beneficiaries = data.get("beneficiaries", [])
     # 保存单次转账的 group 记录
     from .models import TransferGroupList
-    related_tran_id = ",".join([str(b.get("tran_id")) for b in beneficiaries])
+    total_tran = len(beneficiaries)
     total_tran_amount = str(sum([float(b.get("amount",0)) for b in beneficiaries]))
     group_obj = TransferGroupList.objects.create(
-        related_tran_id=related_tran_id,
+        total_tran=total_tran,
         total_tran_amount=total_tran_amount,
         success_tran_amount="",
         current_balance=""
     )
-    group_id = str(group_obj.id)
+    group = str(group_obj.id)
     # 保存每个 beneficiary 到 TransferList
     for bene in beneficiaries:
         TransferList.objects.create(
-            group_id=group_id,
+            group=group_obj,  # 不是 group_id=group_id，也不是 group_id=group_obj.id
             tran_id=bene.get("tran_id"),
             amount=bene.get("amount"),
             bene_acc_no=bene.get("bene_acc_no"),
             bene_name=bene.get("bene_name"),
             bank_code=bene.get("bank_code"),
             recRef=bene.get("recRef"),
-            phone_number=pn
+            phone_number=pn,
+            status=bene.get("success", "fail")
         )
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

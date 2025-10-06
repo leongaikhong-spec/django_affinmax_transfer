@@ -1,7 +1,7 @@
 from django.db import models
 
 class TransferGroupList(models.Model):
-    related_tran_id = models.CharField(max_length=50)
+    total_tran = models.IntegerField(default=0)
     total_tran_amount = models.CharField(max_length=50)
     success_tran_amount = models.CharField(max_length=50)
     current_balance = models.CharField(max_length=50)
@@ -12,11 +12,11 @@ class TransferGroupList(models.Model):
         db_table = "transfer_group_list"
 
     def __str__(self):
-        return f"Group {self.related_tran_id}" 
+        return f"Group {self.id} - {self.total_tran} transactions"
 
 
 class TransferList(models.Model):
-    group_id = models.CharField(max_length=50)
+    group = models.ForeignKey('TransferGroupList', on_delete=models.CASCADE, db_column='group_id', related_name='transfers', null=True, blank=True)
     tran_id = models.CharField(max_length=50, unique=True)
     amount = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -24,7 +24,7 @@ class TransferList(models.Model):
     bene_name = models.CharField(max_length=100)
     bank_code = models.CharField(max_length=20)
     recRef = models.CharField(max_length=100)
-    status = models.CharField(max_length=20)
+    status = models.CharField(max_length=20, default="pending")
     phone_number = models.CharField(max_length=20)
     complete_date = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
