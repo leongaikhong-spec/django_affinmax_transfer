@@ -1,5 +1,7 @@
+
 "auto";
 "ui";
+
 
 const SERVER_IP = "192.168.100.162";  // Device IP Address
 const PHONE_NUMBER = "0123456789";    // Current device phone number
@@ -20,8 +22,11 @@ function log(msg) {
 
 let error_status = "2";
 let message = "Transaction Success";
-let errorMessage = "null";
+let errorMessage = "Transaction Success";
 let balance = "null";
+
+// 记录已上传 status 的 tran_id
+let failedTranIds = [];
 
 function safeInput(field, text) {
     if (field) {
@@ -169,7 +174,7 @@ function open_app() {
     auto.waitFor();
     app.launchPackage("com.affin.ntbs");
     log("✅ Opened AffinMax app");
-    sleep(3000);
+    //sleep(3000);
 }
 
 // function close_notify() {
@@ -207,8 +212,8 @@ function fill_password(password) {
 }
 
 function show_balance() {
-    sleep(8000);
-    let balanceBtn = id("ib_masking_balance").findOne(10000);
+    //sleep(1000);
+    let balanceBtn = id("ib_masking_balance").findOne(20000);
     if (balanceBtn) {
         //click(465, 410); 
         balanceBtn.click();
@@ -420,8 +425,8 @@ function choose_bank(bankCode) {
 function findAndClickBank(bankName) {
     let bankItem;
     log("🔍 Searching bank");
-    // First try with 5 scrolls
-    for (let i = 0; i < 5; i++) { // 2
+    // First try with 6 scrolls
+    for (let i = 0; i < 6; i++) { // 2
         bankItem = id("tv_name").text(bankName).findOne(1000);
         if (bankItem) {
             bankItem.parent().click();
@@ -479,8 +484,26 @@ function click_order_details() {
 }
 
 function click_ok() {
-    id('btn_ok').findOne(10000).click();
-    log("✅ Clicked OK button on finish adding beneficiary");
+    let okBtn = id('btn_ok').findOne(10000);
+    if (okBtn) {
+        okBtn.click();
+        log("✅ Clicked OK button on finish adding beneficiary");
+        sleep(1000);
+        // 检查 check_bene 需要的元素是否出现
+        let msgView = id("tv_message").findOne(3000);
+        if (!msgView) {
+            log("🔄 Retrying OK button click (element not found)");
+            okBtn = id('btn_ok').findOne(5000);
+            if (okBtn) {
+                okBtn.click();
+                log("✅ Clicked OK button again");
+            } else {
+                log("❌ OK button not found for retry");
+            }
+        }
+    } else {
+        log("❌ OK button not found");
+    }
 }
 
 function check_bene(expectedName, similarityThreshold, tran_id) {
@@ -502,6 +525,10 @@ function check_bene(expectedName, similarityThreshold, tran_id) {
             message: "Invalid bank or account number.",
             errorMessage: "Invalid bank or account number."
         }));
+        // 记录已上传 status 的 tran_id
+        if (!failedTranIds.includes(String(tran_id))) {
+            failedTranIds.push(String(tran_id));
+        }
         handle_failed_beneficiary();
         return false;
     } else if (match = msgText.match(/Account No\. is registered as\s+([\s\S]+?)\.\s*Click confirm to proceed payment/)) {
@@ -521,6 +548,10 @@ function check_bene(expectedName, similarityThreshold, tran_id) {
                 message: "Name similarity below threshold.",
                 errorMessage: `Expected: ${expectedName}, Actual: ${actualName}`
             }));
+            // 记录已上传 status 的 tran_id
+            if (!failedTranIds.includes(String(tran_id))) {
+                failedTranIds.push(String(tran_id));
+            }
             name_not_match();            
             return false;
         }
@@ -556,7 +587,7 @@ function handle_failed_beneficiary() {
 
 
     } catch (e) {
-        error_status = "3";
+        error_status = "7";
         message = "Something went wrong";
         errorMessage = "Automation fail at handle_failed_beneficiary";
         return printError();
@@ -589,7 +620,7 @@ function confirm_transfer() {
 }
 
 function approve() {
-    id('btn_approve').findOne(10000).click();
+    id('btn_approve').findOne(20000).click();
     log("✅ Clicked Approve button");
 }
 
@@ -597,7 +628,7 @@ function transfer_password(tranPass) {
     log("👉 Filling transaction password...");
     let passField = id("edit_security").findOne(10000);
     safeInput(passField, tranPass);
-    log("✅ Filled transaction amount");
+    log("✅ Filled transaction password");
 
     id('btn_ok').findOne(10000).click();
     log("✅ Clicked OK button");
@@ -656,7 +687,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         transfer_info(data.beneficiaries);
         open_app();
     } catch (e) {
-        error_status = "3";
+        error_status = "7";
         message = "Something went wrong";
         errorMessage = "Automation fail at open_app";
         printError();
@@ -666,7 +697,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     try {
         fill_corporate_and_user_id(data.corp_id, data.user_id);
     } catch (e) {
-        error_status = "3";
+        error_status = "7";
         message = "Something went wrong";
         errorMessage = "Automation fail at fill_corporate_and_user_id";
         printError();
@@ -676,7 +707,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     try {
         fill_password(data.password);
     } catch (e) {
-        error_status = "3";
+        error_status = "7";
         message = "Something went wrong";
         errorMessage = "Automation fail at fill_password";
         printError();
@@ -686,7 +717,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     try {
         show_balance();
     } catch (e) {
-        error_status = "3";
+        error_status = "7";
         message = "Something went wrong";
         errorMessage = "Automation fail at show_balance";
         printError();
@@ -696,15 +727,24 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     try {
         let bal = check_balance(data.beneficiaries);
         if (bal === null) {
-            error_status = "4";
-            message = "Insufficient balance";
-            errorMessage = "Balance less than transfer amount";
-            printError();
-            return;
+            // 余额不足时，调用后端API并带上所有tran_id
+                data.beneficiaries.forEach(function(bene) {
+                    http.postJson("http://" + SERVER_IP + ":3000/log/", {
+                        device: PHONE_NUMBER,
+                        message: JSON.stringify({
+                            status: "3",
+                            tran_id: String(bene.tran_id),
+                            message: "Insufficient balance",
+                            errorMessage: "Balance less than transfer amount",
+                            balance: null
+                        })
+                    });
+                });
+            return close_app();
         }
         balance = bal;
     } catch (e) {
-        error_status = "3";
+        error_status = "7";
         message = "Something went wrong";
         errorMessage = "Automation fail at check_balance";
         printError();
@@ -714,7 +754,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     try {
         click_duit_now();
     } catch (e) {
-        error_status = "3";
+        error_status = "7";
         message = "Something went wrong";
         errorMessage = "Automation fail at click_duit_now";
         return printError();
@@ -723,7 +763,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     try {
         transaction_details();
     } catch (e) {
-        error_status = "3";
+        error_status = "7";
         message = "Something went wrong";
         errorMessage = "Automation fail at transaction_details";
         return printError();
@@ -736,7 +776,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         try {
             add_beneficiary_button();
         } catch (e) {
-            error_status = "3";
+            error_status = "7";
             message = "Something went wrong";
             errorMessage = "Automation fail at add_beneficiary_button";
             return printError();
@@ -745,7 +785,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         try {
             beneficiary_details(bene.amount, bene.bene_acc_no, bene.bene_name);
         } catch (e) {
-            error_status = "3";
+            error_status = "7";
             message = "Something went wrong";
             errorMessage = "Automation fail at beneficiary_details";
             return printError();
@@ -754,7 +794,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         try {
             choose_bank(bene.bank_code);
         } catch (e) {
-            error_status = "3";
+            error_status = "7";
             message = "Something went wrong";
             errorMessage = "Automation fail at choose_bank";
             return printError();
@@ -763,7 +803,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         try {
             resident_option();
         } catch (e) {
-            error_status = "3";
+            error_status = "7";
             message = "Something went wrong";
             errorMessage = "Automation fail at resident_option";
             return printError();
@@ -772,7 +812,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         try {
             additional_beneficiary_details(bene.recRef);
         } catch (e) {
-            error_status = "3";
+            error_status = "7";
             message = "Something went wrong";
             errorMessage = "Automation fail at additional_beneficiary_details";
             return printError();
@@ -781,7 +821,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         try {
             click_order_details();
         } catch (e) {
-            error_status = "3";
+            error_status = "7";
             message = "Something went wrong";
             errorMessage = "Automation fail at order_details";
             return printError();
@@ -790,7 +830,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         try {
             click_ok();
         } catch (e) {
-            error_status = "3";
+            error_status = "7";
             message = "Something went wrong";
             errorMessage = "Automation fail at click_ok";
             return printError();
@@ -798,10 +838,11 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
 
         try {
             if (!check_bene(bene.bene_name, data.similarityThreshold, bene.tran_id)) {
+                // check_bene 失败时已 log 并记录 tran_id
                 continue;
             }
         } catch (e) {
-            error_status = "3";
+            error_status = "7";
             message = "Something went wrong";
             errorMessage = "Automation fail at check_bene";
             return printError();
@@ -810,7 +851,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         try {
             save_screenshot(bene.tran_id);
         } catch (e) {
-            error_status = "3";
+            error_status = "7";
             message = "Something went wrong";
             errorMessage = "Automation fail at save_screenshot";
             return printError();
@@ -819,7 +860,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         try {
             click_confirm();
         } catch (e) {
-            error_status = "3";
+            error_status = "7";
             message = "Something went wrong";
             errorMessage = "Automation fail at click_confirm";
             return printError();
@@ -831,7 +872,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     try {
         preview_button();
     } catch (e) {
-        error_status = "3";
+        error_status = "7";
         message = "Something went wrong";
         errorMessage = "Automation fail at preview_button";
         return printError();
@@ -840,7 +881,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     try {
         confirm_transfer();
     } catch (e) {
-        error_status = "3";
+        error_status = "7";
         message = "Something went wrong";
         errorMessage = "Automation fail at confirm_transfer";
         return printError();
@@ -849,7 +890,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     try {
         approve();
     } catch (e) {
-        error_status = "3";
+        error_status = "7";
         message = "Something went wrong";
         errorMessage = "Automation fail at approve";
         return printError();
@@ -858,7 +899,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     try {
         transfer_password(data.tranPass);
     } catch (e) {
-        error_status = "3";
+        error_status = "6";
         message = "Something went wrong";
         errorMessage = "Automation fail at transfer_password";
         return printError();
@@ -867,7 +908,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     try {
         success_transfer();
     } catch (e) {
-        error_status = "3";
+        error_status = "6";
         message = "Something went wrong";
         errorMessage = "Automation fail at success_transfer";
         return printError();
@@ -889,32 +930,75 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         let runtime = (new Date() - start_time) / 1000;
         let balance = grab_balance();
         log("-".repeat(22) + ` Total runtime: ${runtime} seconds ` + "-".repeat(21));
-        log(JSON.stringify({
-            status: error_status,
-            message: message,
-            errorMessage: errorMessage,
-            balance: balance
-        }));
-
+        // 逐条上传tran_id
+        if (typeof data !== "undefined" && Array.isArray(data.beneficiaries)) {
+            data.beneficiaries.forEach(function(bene) {
+                if (!failedTranIds.includes(String(bene.tran_id))) {
+                    http.postJson("http://" + SERVER_IP + ":3000/log/", {
+                        device: PHONE_NUMBER,
+                        message: JSON.stringify({
+                            status: error_status,
+                            tran_id: String(bene.tran_id),
+                            message: message,
+                            errorMessage: errorMessage,
+                            balance: balance
+                        })
+                    });
+                }
+            });
+        } else {
+            log(JSON.stringify({
+                status: error_status,
+                message: message,
+                errorMessage: errorMessage,
+                balance: balance
+            }));
+        }
         return close_app();
     } catch (e) {
-        error_status = "3";
+        error_status = "5";
         message = "Something went wrong";
-        errorMessage = "Automation fail at nav_accounts";
+        errorMessage = "Fail to grab final balance";
         return printError();
     }
 
     function printError() {
         let runtime = (new Date() - start_time) / 1000;
         log("-".repeat(22) + ` Total runtime: ${runtime} seconds ` + "-".repeat(21));
-        log(JSON.stringify({
-            status: error_status,
-            message: message,
-            errorMessage: errorMessage,
-            balance: balance
-        }));
+
+        // 只上传未 log 的 tran_id，逐条上传（与 check_balance 余额不足一致）
+        if (typeof data !== "undefined" && Array.isArray(data.beneficiaries)) {
+            data.beneficiaries.forEach(function(bene) {
+                if (!failedTranIds.includes(String(bene.tran_id))) {
+                    http.postJson("http://" + SERVER_IP + ":3000/log/", {
+                        device: PHONE_NUMBER,
+                        message: JSON.stringify({
+                            status: error_status,
+                            tran_id: String(bene.tran_id),
+                            message: message,
+                            errorMessage: errorMessage,
+                            balance: balance
+                        })
+                    });
+                }
+            });
+        } else {
+            // 没有 beneficiaries 时，兼容原有单条 log
+            log(JSON.stringify({
+                status: error_status,
+                message: message,
+                errorMessage: errorMessage,
+                balance: balance
+            }));
+        }
         return close_app();
     }
+}
+
+
+// 兼容直接 require/execScript 调用
+if (typeof run_transfer_process === "function" && typeof data !== "undefined") {
+    run_transfer_process(data);
 }
 
 module.exports = {

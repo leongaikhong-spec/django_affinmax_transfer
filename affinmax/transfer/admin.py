@@ -1,14 +1,14 @@
 from django.contrib import admin
-from .models import TransferList, MobileList, TransferGroupList
-# TransferGroupList 后台
-@admin.register(TransferGroupList)
-class TransferGroupListAdmin(admin.ModelAdmin):
-    list_display = ("total_tran", "total_tran_amount", "success_tran_amount", "current_balance", "created_at", "updated_at")
-    search_fields = ("total_tran",)
+from .models import TransactionsList, MobileList, TransactionsGroupList
+# TransactionsGroupList 后台
+@admin.register(TransactionsGroupList)
+class TransactionsGroupListAdmin(admin.ModelAdmin):
+    list_display = ("total_tran_bene_acc", "total_tran_amount", "success_tran_amount", "current_balance", "created_at", "updated_at")
+    search_fields = ("total_tran_bene_acc",)
 
-# TransferList 后台
-@admin.register(TransferList)
-class TransferListAdmin(admin.ModelAdmin):
+# TransactionsList 后台
+@admin.register(TransactionsList)
+class TransactionsListAdmin(admin.ModelAdmin):
     list_display = ("tran_id", "group_id", "amount", "bene_acc_no", "bene_name", "bank_code", "recRef", "phone_number", "status", "complete_date", "updated_at", "error_message")
     search_fields = ("tran_id", "bene_name", "phone_number")
 

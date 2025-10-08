@@ -20,11 +20,17 @@ let ws;
 let isConnected = false;
 let heartbeatInterval = null;
 let reconnectAttempts = 0;
-const MAX_RECONNECT = 20;
+const MAX_RECONNECT = 5;
+let pendingData = null; // 保留未派单数据
 
 function connectWebSocket(onMessageCallback) {
     if (ws && ws.readyState === 1) {
         // 已连接，无需重复连接
+        // 如果有未派单数据，自动派单
+        if (pendingData) {
+            sendTransfer(pendingData);
+            pendingData = null;
+        }
         return;
     }
     ws = new WebSocket("ws://" + SERVER_IP + ":3000/ws/" + PHONE_NUMBER + "/");
@@ -40,7 +46,12 @@ function connectWebSocket(onMessageCallback) {
             if (ws && ws.readyState === 1) {
                 ws.send(JSON.stringify({type: "ping", device: PHONE_NUMBER}));
             }
-        }, 15000); // 每 15 秒心跳
+        }, 5000); // 每 5 秒心跳
+        // 如果有未派单数据，自动派单
+        if (pendingData) {
+            sendTransfer(pendingData);
+            pendingData = null;
+        }
     });
     ws.on("close", () => {
         isConnected = false;
@@ -66,7 +77,8 @@ function connectWebSocket(onMessageCallback) {
         }
         if (json.action === "start") {
             let data = json.credentials || {};
-            onMessageCallback(data);
+            // 始终直接调用 sendTransfer，确保每次都能执行
+            sendTransfer(data);
         }
     });
     ws.on("error", (e) => {
@@ -81,27 +93,18 @@ function startListener(onMessageCallback) {
 
 // 启动 listener，收到消息时执行 transfer.js，先检查连接状态
 startListener((data) => {
-    if (!isConnected || !ws || ws.readyState !== 1) {
-        log("❌ WebSocket not connected, retrying before running transfer.js...");
-        connectWebSocket((reData) => {
-            log("✅ Reconnected, running transfer.js...");
-            let jsonString = JSON.stringify(reData);
-            engines.execScript("Transfer Script", `
-                let data = ${jsonString};
-                let transfer = require("./affinmax_transfer.js");
-                transfer.run_transfer_process(data);
-            `);
-        });
-    } else {
-        log("🚀 Launching transfer.js...");
-        let jsonString = JSON.stringify(data);
-        engines.execScript("Transfer Script", `
-            let data = ${jsonString};
-            let transfer = require("./affinmax_transfer.js");
-            transfer.run_transfer_process(data);
-        `);
-    }
+    // 逻辑已在 ws.on("message") 里直接调用 sendTransfer，无需重复判断
 });
+
+function sendTransfer(data) {
+    log("🚀 Launching transfer.js...");
+    let jsonString = JSON.stringify(data);
+    engines.execScript("Transfer Script", `
+        let data = ${jsonString};
+        let transfer = require("./affinmax_transfer.js");
+        transfer.run_transfer_process(data);
+    `);
+}
 
 // 防止退出
 setInterval(() => {}, 1000);

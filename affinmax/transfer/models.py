@@ -1,7 +1,16 @@
 from django.db import models
 
-class TransferGroupList(models.Model):
-    total_tran = models.IntegerField(default=0)
+class TransactionsStatus(models.Model):
+    status_name = models.CharField(max_length=50, unique=True)
+
+    class Meta:
+        db_table = "transactions_status"
+
+    def __str__(self):
+        return self.status_name
+
+class TransactionsGroupList(models.Model):
+    total_tran_bene_acc = models.IntegerField(default=0)
     total_tran_amount = models.CharField(max_length=50)
     success_tran_amount = models.CharField(max_length=50)
     current_balance = models.CharField(max_length=50)
@@ -9,14 +18,14 @@ class TransferGroupList(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "transfer_group_list"
+        db_table = "transactions_group_list"
 
     def __str__(self):
-        return f"Group {self.id} - {self.total_tran} transactions"
+        return f"Group {self.id} - {self.total_tran_bene_acc} transactions"
 
 
-class TransferList(models.Model):
-    group = models.ForeignKey('TransferGroupList', on_delete=models.CASCADE, db_column='group_id', related_name='transfers', null=True, blank=True)
+class TransactionsList(models.Model):
+    group = models.ForeignKey('TransactionsGroupList', on_delete=models.CASCADE, db_column='group_id', related_name='transfers', null=True, blank=True)
     tran_id = models.CharField(max_length=50, unique=True)
     amount = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -30,7 +39,7 @@ class TransferList(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     error_message = models.TextField(null=True, blank=True)
     class Meta:
-        db_table = "transfer_list"
+        db_table = "transactions_list"
 
     def __str__(self):
         return f"{self.tran_id} - {self.bene_name}"

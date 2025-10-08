@@ -6,12 +6,34 @@ from datetime import datetime
 from django.http import JsonResponse
 from asgiref.sync import async_to_sync
 from .consumers import connections
-from .models import TransferList, MobileList
+from .models import TransactionsList, MobileList, TransactionsStatus
 from django.db.models import Max
 import json
-
-# ========== log ==========
 from rest_framework.decorators import api_view
+
+
+
+# ========== add_transaction_status ==========
+@swagger_auto_schema(
+    method="post",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "status_name": openapi.Schema(type=openapi.TYPE_STRING)
+        },
+        required=["status_name"],
+    ),
+    responses={200: "TransactionStatus created"},
+)
+
+@api_view(["POST"])
+def add_transaction_status(request):
+    status_name = request.data.get("status_name")
+    if not status_name:
+        return Response({"error": "Missing status_name"}, status=400)
+    obj, created = TransactionsStatus.objects.get_or_create(status_name=status_name)
+    return Response({"id": obj.id, "status_name": obj.status_name, "created": created})
+
 @api_view(["POST"])
 def log(request):
     import os
@@ -37,7 +59,7 @@ def log(request):
         error_message = msg_json.get('errorMessage')
         # 只处理有 tran_id 且 status 的日志
         if tran_id and status is not None:
-            qs = TransferList.objects.filter(tran_id=tran_id)
+            qs = TransactionsList.objects.filter(tran_id=tran_id)
             if qs.exists():
                 obj = qs.first()
                 obj.status = str(status)
@@ -147,19 +169,19 @@ def trigger(request):
 
     beneficiaries = data.get("beneficiaries", [])
     # 保存单次转账的 group 记录
-    from .models import TransferGroupList
-    total_tran = len(beneficiaries)
+    from .models import TransactionsGroupList
+    total_tran_bene_acc = len(beneficiaries)
     total_tran_amount = str(sum([float(b.get("amount",0)) for b in beneficiaries]))
-    group_obj = TransferGroupList.objects.create(
-        total_tran=total_tran,
+    group_obj = TransactionsGroupList.objects.create(
+        total_tran_bene_acc=total_tran_bene_acc,
         total_tran_amount=total_tran_amount,
         success_tran_amount="",
         current_balance=""
     )
     group = str(group_obj.id)
-    # 保存每个 beneficiary 到 TransferList
+    # 保存每个 beneficiary 到 TransactionsList
     for bene in beneficiaries:
-        TransferList.objects.create(
+        TransactionsList.objects.create(
             group=group_obj,
             tran_id=bene.get("tran_id"),
             amount=bene.get("amount"),
