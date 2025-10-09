@@ -105,6 +105,7 @@ function close_app() { // Need to advance this function to close the app properl
     log("-".repeat(74));
     log("✅ Closed affinmax app") 
     log("-".repeat(74));
+    set_is_busy(0); // 流程结束后才设为 0
     exit(); // Exit the script after closing the app
 }
 
@@ -148,7 +149,74 @@ function editDistance(s1, s2) {
     return costs[s2.length];
 }
 
+// ------ Utility functions for backend sync ------
 
+function upload_transfer_log(beneficiaries, failedTranIds, error_status, message, errorMessage, balance) {
+    if (typeof beneficiaries !== "undefined" && Array.isArray(beneficiaries)) {
+        beneficiaries.forEach(function(bene) {
+            if (!failedTranIds.includes(String(bene.tran_id))) {
+                http.postJson("http://" + SERVER_IP + ":3000/log/", {
+                    device: PHONE_NUMBER,
+                    message: JSON.stringify({
+                        status: error_status,
+                        tran_id: String(bene.tran_id),
+                        message: message,
+                        errorMessage: errorMessage,
+                        balance: balance
+                    })
+                });
+            }
+        });
+    } else {
+        log(JSON.stringify({
+            status: error_status,
+            message: message,
+            errorMessage: errorMessage,
+            balance: balance
+        }));
+    }
+}
+
+function calc_success_amount(beneficiaries, failedTranIds) {
+    let successAmount = 0;
+    if (typeof beneficiaries !== "undefined" && Array.isArray(beneficiaries)) {
+        beneficiaries.forEach(function(bene) {
+            if (!failedTranIds.includes(String(bene.tran_id))) {
+                successAmount += toNumber(bene.amount);
+            }
+        });
+    }
+    return successAmount;
+}
+
+function update_backend_group_and_balance(group_id, successAmount, balance) {
+    if (typeof group_id !== "undefined") {
+        http.postJson("http://" + SERVER_IP + ":3000/update_group_success_amount/", {
+            group_id: String(group_id),
+            success_tran_amount: String(successAmount)
+        });
+        // 用 grab_balance() 获取最新余额
+        let final_balance = typeof balance !== "undefined" ? balance : grab_balance();
+        http.postJson("http://" + SERVER_IP + ":3000/update_current_balance/", {
+            device: PHONE_NUMBER,
+            group_id: String(group_id),
+            current_balance: String(final_balance)
+        });
+    }
+}
+
+// 设置 is_busy 状态
+function set_is_busy(val) {
+    try {
+        http.postJson("http://" + SERVER_IP + ":3000/update_is_busy/", {
+            device: PHONE_NUMBER,
+            is_busy: val
+        });
+        log(`✅ Set is_busy = ${val}`);
+    } catch (e) {
+        log(`❌ Failed to set is_busy = ${val}: ` + e);
+    }
+}
 
 
 
@@ -669,61 +737,6 @@ function grab_balance() {
     return null;
 }
 
-// ------ Utility functions for backend sync ------
-
-function upload_transfer_log(beneficiaries, failedTranIds, error_status, message, errorMessage, balance) {
-    if (typeof beneficiaries !== "undefined" && Array.isArray(beneficiaries)) {
-        beneficiaries.forEach(function(bene) {
-            if (!failedTranIds.includes(String(bene.tran_id))) {
-                http.postJson("http://" + SERVER_IP + ":3000/log/", {
-                    device: PHONE_NUMBER,
-                    message: JSON.stringify({
-                        status: error_status,
-                        tran_id: String(bene.tran_id),
-                        message: message,
-                        errorMessage: errorMessage,
-                        balance: balance
-                    })
-                });
-            }
-        });
-    } else {
-        log(JSON.stringify({
-            status: error_status,
-            message: message,
-            errorMessage: errorMessage,
-            balance: balance
-        }));
-    }
-}
-
-function calc_success_amount(beneficiaries, failedTranIds) {
-    let successAmount = 0;
-    if (typeof beneficiaries !== "undefined" && Array.isArray(beneficiaries)) {
-        beneficiaries.forEach(function(bene) {
-            if (!failedTranIds.includes(String(bene.tran_id))) {
-                successAmount += toNumber(bene.amount);
-            }
-        });
-    }
-    return successAmount;
-}
-
-function update_backend_group_and_balance(group_id, successAmount, balance) {
-    if (typeof group_id !== "undefined") {
-        http.postJson("http://" + SERVER_IP + ":3000/update_group_success_amount/", {
-            group_id: String(group_id),
-            success_tran_amount: String(successAmount)
-        });
-        // 用 grab_balance() 获取最新余额
-        let final_balance = typeof balance !== "undefined" ? balance : grab_balance();
-        http.postJson("http://" + SERVER_IP + ":3000/update_current_balance/", {
-            device: PHONE_NUMBER,
-            group_id: String(group_id),
-            current_balance: String(final_balance)
-        });
-    }
-}
 
 
 
@@ -738,6 +751,8 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     log('-'.repeat(74));
     log(`Script run started at ${start_time}`);
     log('-'.repeat(74));
+    
+    set_is_busy(1);
 
     try {
         transfer_info(data.beneficiaries);

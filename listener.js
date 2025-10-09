@@ -57,12 +57,10 @@ function connectWebSocket(onMessageCallback) {
         isConnected = false;
         log("❌ WebSocket disconnected, retrying...");
         if (heartbeatInterval) clearInterval(heartbeatInterval);
-        if (reconnectAttempts < MAX_RECONNECT) {
-            reconnectAttempts++;
-            setTimeout(() => connectWebSocket(onMessageCallback), 2000 * reconnectAttempts); // 指数退避
-        } else {
-            log("❌ Too many reconnect attempts, please check network or server.");
-        }
+        reconnectAttempts++;
+        // 无限重连，间隔递增，最大间隔 60 秒
+        let delay = Math.min(2000 * reconnectAttempts, 5000);
+        setTimeout(() => connectWebSocket(onMessageCallback), delay);
     });
     ws.on("message", (msg) => {
         // 过滤心跳回复

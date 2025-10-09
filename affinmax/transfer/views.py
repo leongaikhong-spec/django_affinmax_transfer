@@ -1,15 +1,101 @@
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import datetime
 from django.http import JsonResponse
+from django.db.models import Max
+from django.test import RequestFactory
 from asgiref.sync import async_to_sync
 from .consumers import connections
 from .models import TransactionsList, MobileList, TransactionsStatus, TransactionsGroupList
-from django.db.models import Max
 import json
-from rest_framework.decorators import api_view
+
+
+
+
+
+# ========== assign_pending_orders ==========
+@api_view(["POST"])
+def assign_pending_orders(request):
+    # 查找空闲设备
+    mobile = MobileList.objects.filter(is_online=True, is_busy=False).first()
+    if not mobile:
+        return Response({"error": "No available idle device"}, status=400)
+    # 查找未分配的订单（status=0，phone_number为空）
+    pending_orders = TransactionsList.objects.filter(status=0, phone_number="")
+    if not pending_orders.exists():
+        return Response({"msg": "No pending orders to assign"}, status=200)
+    assigned = []
+    for order in pending_orders:
+        order.phone_number = mobile.device
+        order.status = 1
+        order.save()
+        # 推送任务到设备（WebSocket）
+        group = order.group
+        beneficiaries = TransactionsList.objects.filter(group=group)
+        credentials = {
+            "corp_id": mobile.corp_id,
+            "user_id": mobile.user_id,
+            "password": mobile.password,
+            "tranPass": mobile.tran_pass,
+            "similarityThreshold": None,
+            "beneficiaries": [
+                {
+                    "tran_id": o.tran_id,
+                    "amount": o.amount,
+                    "bene_acc_no": o.bene_acc_no,
+                    "bene_name": o.bene_name,
+                    "bank_code": o.bank_code,
+                    "recRef": o.recRef,
+                } for o in beneficiaries
+            ],
+            "log_file": mobile.log_file,
+            "device": mobile.device,
+            "group_id": str(group.id),
+        }
+        pn = mobile.device
+        from asgiref.sync import async_to_sync
+        from .consumers import connections
+        if pn in connections:
+            async_to_sync(connections[pn].send)(
+                text_data=json.dumps({
+                    "action": "start",
+                    "credentials": credentials,
+                })
+            )
+        assigned.append(order.tran_id)
+    return Response({"msg": "Assigned orders", "orders": assigned, "device": mobile.device}, status=200)
+
+
+# ========== update_is_busy ==========
+
+@api_view(["POST"])
+def update_is_busy(request):
+    device = request.data.get("device")
+    is_busy = request.data.get("is_busy")
+    if device is None or is_busy is None:
+        return Response({"error": "Missing device or is_busy"}, status=400)
+    try:
+        mobile = MobileList.objects.get(device=device)
+        mobile.is_busy = bool(int(is_busy))
+        mobile.save()
+        # 设备变空闲时自动调用 assign_pending_orders 实现自动派单
+        if mobile.is_busy is False:
+            import time
+            time.sleep(2)  # 等待2秒
+            factory = RequestFactory()
+            assign_request = factory.post('/assign_pending_orders/')
+            assign_response = assign_pending_orders(assign_request)
+            try:
+                assign_data = assign_response.data
+            except Exception:
+                assign_data = None
+            return Response({"status": "ok", "device": device, "is_busy": mobile.is_busy, "assign_result": assign_data})
+        return Response({"status": "ok", "device": device, "is_busy": mobile.is_busy})
+    except MobileList.DoesNotExist:
+        return Response({"error": "Device not found"}, status=404)
 
 
 # ========== update_group_success_amount ==========
@@ -205,27 +291,9 @@ credentials_map = {}
 @api_view(["POST"])
 def trigger(request):
     data = request.data
-    # 查找可用 mobile（is_busy=0）
-    mobile = MobileList.objects.filter(is_busy=False).first()
-    if not mobile:
-        return Response({"error": "No available mobile device"}, status=400)
-
-    # 组装 credentials
-    credentials = {
-        "corp_id": mobile.corp_id,
-        "user_id": mobile.user_id,
-        "password": mobile.password,
-        "tranPass": mobile.tran_pass,
-        "similarityThreshold": data.get("similarityThreshold"),
-        "beneficiaries": data.get("beneficiaries", []),
-        "log_file": mobile.log_file,
-        "device": mobile.device,
-    }
-    pn = mobile.device
-
-
+    # 查找可用 mobile（is_online=True, is_busy=False）
+    mobile = MobileList.objects.filter(is_online=True, is_busy=False).first()
     beneficiaries = data.get("beneficiaries", [])
-    # 保存单次转账的 group 记录
     total_tran_bene_acc = len(beneficiaries)
     total_tran_amount = str(sum([float(b.get("amount",0)) for b in beneficiaries]))
     group_obj = TransactionsGroupList.objects.create(
@@ -236,6 +304,25 @@ def trigger(request):
     )
     group_id = str(group_obj.id)
 
+    # 保存每个 beneficiary 到 TransactionsList，phone_number 为空字符串（无设备）
+    for bene in beneficiaries:
+        TransactionsList.objects.create(
+            group=group_obj,
+            tran_id=bene.get("tran_id"),
+            amount=bene.get("amount"),
+            bene_acc_no=bene.get("bene_acc_no"),
+            bene_name=bene.get("bene_name"),
+            bank_code=bene.get("bank_code"),
+            recRef=bene.get("recRef"),
+            phone_number=mobile.device if mobile else "",
+            status=0
+        )
+
+    if not mobile:
+        # 没有可用设备，订单已入库，等待分配
+        return Response({"status": "waiting", "msg": "No available device, order queued", "group_id": group_id}, status=202)
+
+    # 有可用设备，立即推送
     credentials = {
         "corp_id": mobile.corp_id,
         "user_id": mobile.user_id,
@@ -248,24 +335,7 @@ def trigger(request):
         "group_id": group_id,
     }
     pn = mobile.device
-
-    # 保存每个 beneficiary 到 TransactionsList
-    for bene in beneficiaries:
-        TransactionsList.objects.create(
-            group=group_obj,
-            tran_id=bene.get("tran_id"),
-            amount=bene.get("amount"),
-            bene_acc_no=bene.get("bene_acc_no"),
-            bene_name=bene.get("bene_name"),
-            bank_code=bene.get("bank_code"),
-            recRef=bene.get("recRef"),
-            phone_number=pn,
-            status=bene.get("status", "1")
-        )
-
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    # 只保留 WebSocket 推送和日志
     if pn in connections:
         async_to_sync(connections[pn].send)(
             text_data=json.dumps({
@@ -273,6 +343,7 @@ def trigger(request):
                 "credentials": credentials,
             })
         )
+        TransactionsList.objects.filter(group=group_obj).update(status=1)
         import os
         log_dir = os.path.join(os.path.dirname(__file__), '../Log')
         log_dir = os.path.abspath(log_dir)
