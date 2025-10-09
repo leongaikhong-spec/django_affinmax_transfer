@@ -6,11 +6,68 @@ from datetime import datetime
 from django.http import JsonResponse
 from asgiref.sync import async_to_sync
 from .consumers import connections
-from .models import TransactionsList, MobileList, TransactionsStatus
+from .models import TransactionsList, MobileList, TransactionsStatus, TransactionsGroupList
 from django.db.models import Max
 import json
 from rest_framework.decorators import api_view
 
+
+# ========== update_group_success_amount ==========
+
+@api_view(["POST"])
+def update_group_success_amount(request):
+    group_id = request.data.get("group_id")
+    success_tran_amount = request.data.get("success_tran_amount")
+    if not group_id or success_tran_amount is None:
+        return Response({"error": "Missing group_id or success_tran_amount"}, status=400)
+    try:
+        from .models import TransactionsGroupList
+        group = TransactionsGroupList.objects.get(id=group_id)
+        group.success_tran_amount = success_tran_amount
+        group.save()
+        return Response({"status": "ok"})
+    except TransactionsGroupList.DoesNotExist:
+        return Response({"error": "Group not found"}, status=404)
+
+# ========== update_current_balance ==========
+
+
+@api_view(["POST"])
+def update_current_balance(request):
+    device = request.data.get("device")
+    group_id = request.data.get("group_id")
+    current_balance = request.data.get("current_balance")
+    updated = []
+    # Debug log
+    print(f"[update_current_balance] device={device}, group_id={group_id}, current_balance={current_balance}")
+    if device:
+        from .models import MobileList
+        try:
+            mobile = MobileList.objects.get(device=device)
+            mobile.current_balance = current_balance
+            mobile.save()
+            updated.append("mobile")
+        except MobileList.DoesNotExist:
+            print(f"[update_current_balance] MobileList not found for device={device}")
+            pass
+    if group_id:
+        from .models import TransactionsGroupList
+        try:
+            group = TransactionsGroupList.objects.get(id=int(group_id))
+            group.current_balance = current_balance
+            group.save()
+            updated.append("group")
+        except TransactionsGroupList.DoesNotExist:
+            print(f"[update_current_balance] TransactionsGroupList not found for id={group_id}")
+            pass
+        except Exception as e:
+            print(f"[update_current_balance] Exception: {e}")
+    if updated:
+        print(f"[update_current_balance] Updated: {updated}")
+        return Response({"status": "ok", "updated": updated})
+    else:
+        print(f"[update_current_balance] No record updated")
+        return Response({"error": "No record updated"}, status=404)
 
 
 # ========== add_transaction_status ==========
@@ -51,7 +108,7 @@ def log(request):
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(f"{timestamp} {msg}\n")
 
-    # 自动同步 status 到 TransferList
+    # 自动同步 status 到 TransactionsList
     try:
         msg_json = json.loads(msg)
         tran_id = msg_json.get('tran_id')
@@ -169,7 +226,6 @@ def trigger(request):
 
     beneficiaries = data.get("beneficiaries", [])
     # 保存单次转账的 group 记录
-    from .models import TransactionsGroupList
     total_tran_bene_acc = len(beneficiaries)
     total_tran_amount = str(sum([float(b.get("amount",0)) for b in beneficiaries]))
     group_obj = TransactionsGroupList.objects.create(
@@ -178,7 +234,21 @@ def trigger(request):
         success_tran_amount="",
         current_balance=""
     )
-    group = str(group_obj.id)
+    group_id = str(group_obj.id)
+
+    credentials = {
+        "corp_id": mobile.corp_id,
+        "user_id": mobile.user_id,
+        "password": mobile.password,
+        "tranPass": mobile.tran_pass,
+        "similarityThreshold": data.get("similarityThreshold"),
+        "beneficiaries": beneficiaries,
+        "log_file": mobile.log_file,
+        "device": mobile.device,
+        "group_id": group_id,
+    }
+    pn = mobile.device
+
     # 保存每个 beneficiary 到 TransactionsList
     for bene in beneficiaries:
         TransactionsList.objects.create(
@@ -214,7 +284,5 @@ def trigger(request):
         return JsonResponse({"message": f"Task pushed to {pn}"})
     else:
         return Response({"error": f"Device {pn} not online"}, status=400)
-
-
 
 

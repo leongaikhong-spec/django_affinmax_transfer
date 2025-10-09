@@ -64,6 +64,6 @@ class MobileList(models.Model):
         db_table = "mobile_list"
 
     def __str__(self):
-        return f"{self.phone_number}"
+        return f"{self.device}"
 
 

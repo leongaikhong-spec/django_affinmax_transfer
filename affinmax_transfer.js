@@ -1,4 +1,3 @@
-
 "auto";
 "ui";
 
@@ -232,8 +231,9 @@ function check_balance(beneficiaries) {
     let balanceText = balanceTextView.text();
     let balanceValue = toNumber(balanceText);
 
-    if (isNaN(balanceValue)) {
-        log("❌ Unable to retrieve balance (NaN)");
+    // 只有 balanceValue 是有效数字才进行比对
+    if (isNaN(balanceValue) || balanceValue === null) {
+        log("❌ Unable to retrieve valid balance, skip insufficient balance check");
         return null;
     }
 
@@ -311,7 +311,7 @@ function beneficiary_details(amount, accNo, name) {
     let title = id("tv_bene_details").findOne(10000);
     if (!title || title.text() !== "Beneficiary") {
         log("❌ Not on Beneficiary page, cannot proceed.");
-
+        throw new Error("Not on Beneficiary page");
     }
 
     id('rb_open_bene').click();
@@ -669,6 +669,62 @@ function grab_balance() {
     return null;
 }
 
+// ------ Utility functions for backend sync ------
+
+function upload_transfer_log(beneficiaries, failedTranIds, error_status, message, errorMessage, balance) {
+    if (typeof beneficiaries !== "undefined" && Array.isArray(beneficiaries)) {
+        beneficiaries.forEach(function(bene) {
+            if (!failedTranIds.includes(String(bene.tran_id))) {
+                http.postJson("http://" + SERVER_IP + ":3000/log/", {
+                    device: PHONE_NUMBER,
+                    message: JSON.stringify({
+                        status: error_status,
+                        tran_id: String(bene.tran_id),
+                        message: message,
+                        errorMessage: errorMessage,
+                        balance: balance
+                    })
+                });
+            }
+        });
+    } else {
+        log(JSON.stringify({
+            status: error_status,
+            message: message,
+            errorMessage: errorMessage,
+            balance: balance
+        }));
+    }
+}
+
+function calc_success_amount(beneficiaries, failedTranIds) {
+    let successAmount = 0;
+    if (typeof beneficiaries !== "undefined" && Array.isArray(beneficiaries)) {
+        beneficiaries.forEach(function(bene) {
+            if (!failedTranIds.includes(String(bene.tran_id))) {
+                successAmount += toNumber(bene.amount);
+            }
+        });
+    }
+    return successAmount;
+}
+
+function update_backend_group_and_balance(group_id, successAmount, balance) {
+    if (typeof group_id !== "undefined") {
+        http.postJson("http://" + SERVER_IP + ":3000/update_group_success_amount/", {
+            group_id: String(group_id),
+            success_tran_amount: String(successAmount)
+        });
+        // 用 grab_balance() 获取最新余额
+        let final_balance = typeof balance !== "undefined" ? balance : grab_balance();
+        http.postJson("http://" + SERVER_IP + ":3000/update_current_balance/", {
+            device: PHONE_NUMBER,
+            group_id: String(group_id),
+            current_balance: String(final_balance)
+        });
+    }
+}
+
 
 
 
@@ -728,21 +784,23 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         let bal = check_balance(data.beneficiaries);
         if (bal === null) {
             // 余额不足时，调用后端API并带上所有tran_id
-                data.beneficiaries.forEach(function(bene) {
-                    http.postJson("http://" + SERVER_IP + ":3000/log/", {
-                        device: PHONE_NUMBER,
-                        message: JSON.stringify({
-                            status: "3",
-                            tran_id: String(bene.tran_id),
-                            message: "Insufficient balance",
-                            errorMessage: "Balance less than transfer amount",
-                            balance: null
-                        })
-                    });
+            data.beneficiaries.forEach(function(bene) {
+                http.postJson("http://" + SERVER_IP + ":3000/log/", {
+                    device: PHONE_NUMBER,
+                    message: JSON.stringify({
+                        status: "3",
+                        tran_id: String(bene.tran_id),
+                        message: "Insufficient balance",
+                        errorMessage: "Balance less than transfer amount",
+                        balance: null
+                    })
                 });
+            });
             return close_app();
         }
         balance = bal;
+
+        // ...existing code...
     } catch (e) {
         error_status = "7";
         message = "Something went wrong";
@@ -931,30 +989,18 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         let balance = grab_balance();
         log("-".repeat(22) + ` Total runtime: ${runtime} seconds ` + "-".repeat(21));
         // 逐条上传tran_id
-        if (typeof data !== "undefined" && Array.isArray(data.beneficiaries)) {
-            data.beneficiaries.forEach(function(bene) {
-                if (!failedTranIds.includes(String(bene.tran_id))) {
-                    http.postJson("http://" + SERVER_IP + ":3000/log/", {
-                        device: PHONE_NUMBER,
-                        message: JSON.stringify({
-                            status: error_status,
-                            tran_id: String(bene.tran_id),
-                            message: message,
-                            errorMessage: errorMessage,
-                            balance: balance
-                        })
-                    });
-                }
-            });
-        } else {
-            log(JSON.stringify({
-                status: error_status,
-                message: message,
-                errorMessage: errorMessage,
-                balance: balance
-            }));
-        }
+        upload_transfer_log(data.beneficiaries, failedTranIds, error_status, message, errorMessage, balance);
+
+        // 统计成功转账金额
+        let successAmount = calc_success_amount(data.beneficiaries, failedTranIds);
+
+        // 上传成功金额和余额到后端
+        update_backend_group_and_balance(data.group_id, successAmount);
+
+        log("Total success transfer amount: " + successAmount);
+
         return close_app();
+
     } catch (e) {
         error_status = "5";
         message = "Something went wrong";
@@ -966,30 +1012,12 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         let runtime = (new Date() - start_time) / 1000;
         log("-".repeat(22) + ` Total runtime: ${runtime} seconds ` + "-".repeat(21));
 
-        // 只上传未 log 的 tran_id，逐条上传（与 check_balance 余额不足一致）
-        if (typeof data !== "undefined" && Array.isArray(data.beneficiaries)) {
-            data.beneficiaries.forEach(function(bene) {
-                if (!failedTranIds.includes(String(bene.tran_id))) {
-                    http.postJson("http://" + SERVER_IP + ":3000/log/", {
-                        device: PHONE_NUMBER,
-                        message: JSON.stringify({
-                            status: error_status,
-                            tran_id: String(bene.tran_id),
-                            message: message,
-                            errorMessage: errorMessage,
-                            balance: balance
-                        })
-                    });
-                }
-            });
-        } else {
-            // 没有 beneficiaries 时，兼容原有单条 log
-            log(JSON.stringify({
-                status: error_status,
-                message: message,
-                errorMessage: errorMessage,
-                balance: balance
-            }));
+        // 统一用工具函数上传日志
+        upload_transfer_log(data.beneficiaries, failedTranIds, error_status, message, errorMessage, balance);
+
+        // 失败时立即更新 current_balance（只用 check_balance 的结果，不用 grab_balance）
+        if (typeof data.group_id !== "undefined" && balance !== null && balance !== "null") {
+            update_backend_group_and_balance(data.group_id, null, balance);
         }
         return close_app();
     }
