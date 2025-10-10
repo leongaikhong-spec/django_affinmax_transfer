@@ -4,7 +4,6 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 import transfer.routing
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "affinmax.affinmax.settings")
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),

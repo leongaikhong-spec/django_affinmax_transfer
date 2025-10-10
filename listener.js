@@ -1,12 +1,12 @@
 "auto";
 "ui";
 
-const SERVER_IP = "192.168.100.162";  // 你的服务器IP
+const SERVER_IP = "192.168.100.202";  // 你的服务器IP
 const PHONE_NUMBER = "0123456789";    // 你的设备号码
 
 function log(msg) {
     try {
-        http.postJson("http://" + SERVER_IP + ":3000/log/", {
+    http.postJson("http://" + SERVER_IP + ":8000/log/", {
             device: PHONE_NUMBER,
             message: msg
         });
@@ -33,7 +33,7 @@ function connectWebSocket(onMessageCallback) {
         }
         return;
     }
-    ws = new WebSocket("ws://" + SERVER_IP + ":3000/ws/" + PHONE_NUMBER + "/");
+    ws = new WebSocket("ws://" + SERVER_IP + ":8000/ws/" + PHONE_NUMBER + "/");
     ws.on("open", () => {
         isConnected = true;
         reconnectAttempts = 0;
@@ -58,13 +58,16 @@ function connectWebSocket(onMessageCallback) {
         log("❌ WebSocket disconnected, retrying...");
         if (heartbeatInterval) clearInterval(heartbeatInterval);
         reconnectAttempts++;
-        // 无限重连，间隔递增，最大间隔 60 秒
+        // 无限重连，间隔递增，最大间隔 5 秒
         let delay = Math.min(2000 * reconnectAttempts, 5000);
         setTimeout(() => connectWebSocket(onMessageCallback), delay);
     });
     ws.on("message", (msg) => {
         // 过滤心跳回复
         if (msg === "pong" || msg === "ping") return;
+        log("");
+        log("");
+        log("");
         log("📩 Received message: " + msg);
         let json;
         try {
@@ -75,7 +78,7 @@ function connectWebSocket(onMessageCallback) {
         }
         if (json.action === "start") {
             let data = json.credentials || {};
-            // 始终直接调用 sendTransfer，确保每次都能执行
+            // 直接执行，不再排队
             sendTransfer(data);
         }
     });

@@ -2,12 +2,12 @@
 "ui";
 
 
-const SERVER_IP = "192.168.100.162";  // Device IP Address
+const SERVER_IP = "192.168.100.202";  // Device IP Address
 const PHONE_NUMBER = "0123456789";    // Current device phone number
 
 function log(msg) {
     try {
-        http.postJson("http://" + SERVER_IP + ":3000/log/", {
+    http.postJson("http://" + SERVER_IP + ":8000/log/", {
             device: PHONE_NUMBER,
             message: msg
         });
@@ -155,7 +155,7 @@ function upload_transfer_log(beneficiaries, failedTranIds, error_status, message
     if (typeof beneficiaries !== "undefined" && Array.isArray(beneficiaries)) {
         beneficiaries.forEach(function(bene) {
             if (!failedTranIds.includes(String(bene.tran_id))) {
-                http.postJson("http://" + SERVER_IP + ":3000/log/", {
+                http.postJson("http://" + SERVER_IP + ":8000/log/", {
                     device: PHONE_NUMBER,
                     message: JSON.stringify({
                         status: error_status,
@@ -191,13 +191,13 @@ function calc_success_amount(beneficiaries, failedTranIds) {
 
 function update_backend_group_and_balance(group_id, successAmount, balance) {
     if (typeof group_id !== "undefined") {
-        http.postJson("http://" + SERVER_IP + ":3000/update_group_success_amount/", {
+    http.postJson("http://" + SERVER_IP + ":8000/update_group_success_amount/", {
             group_id: String(group_id),
             success_tran_amount: String(successAmount)
         });
         // 用 grab_balance() 获取最新余额
         let final_balance = typeof balance !== "undefined" ? balance : grab_balance();
-        http.postJson("http://" + SERVER_IP + ":3000/update_current_balance/", {
+    http.postJson("http://" + SERVER_IP + ":8000/update_current_balance/", {
             device: PHONE_NUMBER,
             group_id: String(group_id),
             current_balance: String(final_balance)
@@ -208,7 +208,7 @@ function update_backend_group_and_balance(group_id, successAmount, balance) {
 // 设置 is_busy 状态
 function set_is_busy(val) {
     try {
-        http.postJson("http://" + SERVER_IP + ":3000/update_is_busy/", {
+    http.postJson("http://" + SERVER_IP + ":8000/update_is_busy/", {
             device: PHONE_NUMBER,
             is_busy: val
         });
@@ -221,7 +221,7 @@ function set_is_busy(val) {
 
 
 
-
+// 加stay在主页有单就pass掉login的process
 // ------ Automation functions start here ------
 function transfer_info(beneficiaries) {
 
@@ -800,7 +800,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         if (bal === null) {
             // 余额不足时，调用后端API并带上所有tran_id
             data.beneficiaries.forEach(function(bene) {
-                http.postJson("http://" + SERVER_IP + ":3000/log/", {
+                http.postJson("http://" + SERVER_IP + ":8000/log/", {
                     device: PHONE_NUMBER,
                     message: JSON.stringify({
                         status: "3",
@@ -1034,7 +1034,19 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         if (typeof data.group_id !== "undefined" && balance !== null && balance !== "null") {
             update_backend_group_and_balance(data.group_id, null, balance);
         }
-        return close_app();
+
+        // 失败时回传 is_busy=0，保证设备释放
+        try {
+            http.postJson("http://" + SERVER_IP + ":8000/update_is_busy/", {
+                device: PHONE_NUMBER,
+                is_busy: 0
+            });
+            log("✅ Set is_busy = 0 (error case)");
+        } catch (e) {
+            log("❌ Failed to set is_busy = 0 (error case): " + e);
+        }
+
+    return close_app();
     }
 }
 

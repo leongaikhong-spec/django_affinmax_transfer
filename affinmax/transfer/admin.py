@@ -17,4 +17,5 @@ class TransactionsListAdmin(admin.ModelAdmin):
 @admin.register(MobileList)
 class MobileListAdmin(admin.ModelAdmin):
     list_display = ("device", "is_online", "is_activated", "is_busy", "current_balance", "corp_id", "user_id", "created_at", "updated_at")
-    search_fields = ("device", "is_online", "is_activated", "is_busy")
+    search_fields = ("device",)
+    readonly_fields = ("is_online",)

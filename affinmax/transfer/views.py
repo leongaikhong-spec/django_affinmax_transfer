@@ -1,4 +1,3 @@
-
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
@@ -16,13 +15,25 @@ import json
 
 
 
+
+# 查询设备 is_online 状态接口
+
+from django.http import JsonResponse
+
+
 # ========== assign_pending_orders ==========
 @api_view(["POST"])
 def assign_pending_orders(request):
-    # 查找空闲设备
-    mobile = MobileList.objects.filter(is_online=True, is_busy=False).first()
+    # 查找空闲且已连接 WebSocket 的设备
+    from .consumers import connections
+    mobiles = MobileList.objects.filter(is_online=True, is_busy=False)
+    mobile = None
+    for m in mobiles:
+        if m.device in connections:
+            mobile = m
+            break
     if not mobile:
-        return Response({"error": "No available idle device"}, status=400)
+        return Response({"error": "No available idle device online"}, status=400)
     # 查找未分配的订单（status=0，phone_number为空）
     pending_orders = TransactionsList.objects.filter(status=0, phone_number="")
     if not pending_orders.exists():
@@ -253,7 +264,7 @@ def create_mobile(request):
     ]:
         if field in data:
             setattr(mobile, field, data[field])
-    for field in ["is_online", "is_activated", "is_busy"]:
+    for field in ["is_activated", "is_busy"]:
         if field in data:
             setattr(mobile, field, bool(int(data[field])))
     mobile.save()
@@ -292,7 +303,13 @@ credentials_map = {}
 def trigger(request):
     data = request.data
     # 查找可用 mobile（is_online=True, is_busy=False）
-    mobile = MobileList.objects.filter(is_online=True, is_busy=False).first()
+    from .consumers import connections
+    mobiles = MobileList.objects.filter(is_online=True, is_busy=False)
+    mobile = None
+    for m in mobiles:
+        if m.device in connections:
+            mobile = m
+            break
     beneficiaries = data.get("beneficiaries", [])
     total_tran_bene_acc = len(beneficiaries)
     total_tran_amount = str(sum([float(b.get("amount",0)) for b in beneficiaries]))
@@ -349,7 +366,7 @@ def trigger(request):
         log_dir = os.path.abspath(log_dir)
         os.makedirs(log_dir, exist_ok=True)
         log_file = os.path.join(log_dir, f'{pn}.txt')
-        log_msg = f"[\n{timestamp}] Trigger pushed via WebSocket"
+        log_msg = f"\n[{timestamp}] Trigger pushed via WebSocket"
         with open(log_file, "a", encoding="utf-8") as f:
             f.write(log_msg)
         return JsonResponse({"message": f"Task pushed to {pn}"})
