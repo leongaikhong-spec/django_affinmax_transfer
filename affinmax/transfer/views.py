@@ -10,15 +10,25 @@ from asgiref.sync import async_to_sync
 from .consumers import connections
 from .models import TransactionsList, MobileList, TransactionsStatus, TransactionsGroupList
 import json
+from .consumers import connections
 
 
 
 
 
+def send_task_to_device(mobile, credentials, group_obj):
+    # 只有 is_online=1, is_activated=1, is_busy=0 才能派单
+    if not mobile or not getattr(mobile, "is_online", False) or not getattr(mobile, "is_activated", False) or getattr(mobile, "is_busy", True):
+        return Response({"status": "waiting", "msg": "No available device, order queued", "group_id": group_obj.id}, status=202)
 
-# 查询设备 is_online 状态接口
-
-from django.http import JsonResponse
+    async_to_sync(connections[mobile.device].send)(
+        text_data=json.dumps({
+            "action": "start",
+            "credentials": credentials,
+        })
+    )
+    TransactionsList.objects.filter(group=group_obj).update(status=1)
+    return JsonResponse({"message": f"Task pushed to {mobile.device}"})
 
 
 # ========== assign_pending_orders ==========
@@ -26,58 +36,73 @@ from django.http import JsonResponse
 def assign_pending_orders(request):
     # 查找空闲且已连接 WebSocket 的设备
     from .consumers import connections
-    mobiles = MobileList.objects.filter(is_online=True, is_busy=False)
+    mobiles = MobileList.objects.filter(is_online=True, is_busy=False, is_activated=True)
     mobile = None
     for m in mobiles:
-        if m.device in connections:
+        if m.device in connections and getattr(m, "is_online", False) and getattr(m, "is_activated", False) and not getattr(m, "is_busy", True):
             mobile = m
             break
     if not mobile:
         return Response({"error": "No available idle device online"}, status=400)
     # 查找未分配的订单（status=0，phone_number为空）
-    pending_orders = TransactionsList.objects.filter(status=0, phone_number="")
-    if not pending_orders.exists():
+    # 一次最多分配5个pending订单
+    batch_orders = list(TransactionsList.objects.filter(status=0, phone_number="").order_by('id')[:5])
+    if not batch_orders:
         return Response({"msg": "No pending orders to assign"}, status=200)
+    # 先将订单分配给设备（phone_number/status=1），但不分组
+    beneficiaries = []
     assigned = []
-    for order in pending_orders:
-        order.phone_number = mobile.device
-        order.status = 1
+    total_tran_amount = 0
+    for order in batch_orders:
+        if getattr(mobile, "is_online", False) and getattr(mobile, "is_activated", False) and not getattr(mobile, "is_busy", True):
+            order.phone_number = mobile.device
+            order.status = 1
+        else:
+            order.phone_number = ""
+            order.status = 0
         order.save()
-        # 推送任务到设备（WebSocket）
-        group = order.group
-        beneficiaries = TransactionsList.objects.filter(group=group)
-        credentials = {
-            "corp_id": mobile.corp_id,
-            "user_id": mobile.user_id,
-            "password": mobile.password,
-            "tranPass": mobile.tran_pass,
-            "similarityThreshold": None,
-            "beneficiaries": [
-                {
-                    "tran_id": o.tran_id,
-                    "amount": o.amount,
-                    "bene_acc_no": o.bene_acc_no,
-                    "bene_name": o.bene_name,
-                    "bank_code": o.bank_code,
-                    "recRef": o.recRef,
-                } for o in beneficiaries
-            ],
-            "log_file": mobile.log_file,
-            "device": mobile.device,
-            "group_id": str(group.id),
-        }
-        pn = mobile.device
-        from asgiref.sync import async_to_sync
-        from .consumers import connections
-        if pn in connections:
-            async_to_sync(connections[pn].send)(
-                text_data=json.dumps({
-                    "action": "start",
-                    "credentials": credentials,
-                })
-            )
         assigned.append(order.tran_id)
-    return Response({"msg": "Assigned orders", "orders": assigned, "device": mobile.device}, status=200)
+        beneficiaries.append({
+            "tran_id": order.tran_id,
+            "amount": order.amount,
+            "bene_acc_no": order.bene_acc_no,
+            "bene_name": order.bene_name,
+            "bank_code": order.bank_code,
+            "recRef": order.recRef,
+        })
+        try:
+            total_tran_amount += float(order.amount)
+        except Exception:
+            pass
+    # 只有分配成功（phone_number和status=1）才创建 group 并归类
+    ready_orders = [o for o in batch_orders if o.phone_number and o.status == 1]
+    group_obj = None
+    if ready_orders:
+        group_obj = TransactionsGroupList.objects.create(
+            total_tran_bene_acc=len(ready_orders),
+            total_tran_amount=str(total_tran_amount),
+            success_tran_amount="",
+            current_balance=""
+        )
+        for order in ready_orders:
+            order.group = group_obj
+            order.save()
+    credentials = {
+        "corp_id": mobile.corp_id,
+        "user_id": mobile.user_id,
+        "password": mobile.password,
+        "tranPass": mobile.tran_pass,
+        "similarityThreshold": None,
+        "beneficiaries": beneficiaries,
+        "log_file": mobile.log_file,
+        "device": mobile.device,
+        "group_id": str(group_obj.id) if group_obj else "",
+        "is_activated": 1 if getattr(mobile, "is_activated", False) else 0,
+    }
+    from asgiref.sync import async_to_sync
+    from .consumers import connections
+    resp = send_task_to_device(mobile, credentials, group_obj)
+    return Response({"msg": "Assigned orders", "orders": assigned, "device": mobile.device, "group_id": str(group_obj.id) if group_obj else ""}, status=200)
 
 
 # ========== update_is_busy ==========
@@ -219,6 +244,9 @@ def log(request):
                 obj.status = str(status)
                 if error_message:
                     obj.error_message = str(error_message)
+                # 流程结束时，无论成功或失败都写入 complete_date
+                from datetime import datetime
+                obj.complete_date = datetime.now()
                 obj.save()
     except Exception as e:
         # 非结构化日志或解析失败，跳过
@@ -304,42 +332,35 @@ def trigger(request):
     data = request.data
     # 查找可用 mobile（is_online=True, is_busy=False）
     from .consumers import connections
-    mobiles = MobileList.objects.filter(is_online=True, is_busy=False)
+    # 只选 is_online=1, is_activated=1, is_busy=0 的设备
+    mobiles = MobileList.objects.filter(is_online=True, is_busy=False, is_activated=True)
     mobile = None
     for m in mobiles:
-        if m.device in connections:
+        if m.device in connections and getattr(m, "is_online", False) and getattr(m, "is_activated", False) and not getattr(m, "is_busy", True):
             mobile = m
             break
     beneficiaries = data.get("beneficiaries", [])
-    total_tran_bene_acc = len(beneficiaries)
-    total_tran_amount = str(sum([float(b.get("amount",0)) for b in beneficiaries]))
-    group_obj = TransactionsGroupList.objects.create(
-        total_tran_bene_acc=total_tran_bene_acc,
-        total_tran_amount=total_tran_amount,
-        success_tran_amount="",
-        current_balance=""
-    )
-    group_id = str(group_obj.id)
-
-    # 保存每个 beneficiary 到 TransactionsList，phone_number 为空字符串（无设备）
+    # 只在 TransactionsList 创建订单，不创建 group
     for bene in beneficiaries:
         TransactionsList.objects.create(
-            group=group_obj,
             tran_id=bene.get("tran_id"),
             amount=bene.get("amount"),
             bene_acc_no=bene.get("bene_acc_no"),
             bene_name=bene.get("bene_name"),
             bank_code=bene.get("bank_code"),
             recRef=bene.get("recRef"),
-            phone_number=mobile.device if mobile else "",
+            phone_number="",
             status=0
         )
 
+    # 没有可用设备，订单已入库，等待分配
     if not mobile:
-        # 没有可用设备，订单已入库，等待分配
-        return Response({"status": "waiting", "msg": "No available device, order queued", "group_id": group_id}, status=202)
+        return Response({"status": "waiting", "msg": "No available device, order queued"}, status=202)
 
-    # 有可用设备，立即推送
+    # 只有设备 is_online 且 is_activated=1 时才推送任务
+    if not getattr(mobile, "is_online", False) or not getattr(mobile, "is_activated", False):
+        return Response({"status": "waiting", "msg": "No available device, order queued"}, status=202)
+
     credentials = {
         "corp_id": mobile.corp_id,
         "user_id": mobile.user_id,
@@ -349,28 +370,23 @@ def trigger(request):
         "beneficiaries": beneficiaries,
         "log_file": mobile.log_file,
         "device": mobile.device,
-        "group_id": group_id,
+        "group_id": "",  # 暂无 group_id
+        "is_activated": 1 if getattr(mobile, "is_activated", False) else 0,
     }
     pn = mobile.device
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    if pn in connections:
-        async_to_sync(connections[pn].send)(
-            text_data=json.dumps({
-                "action": "start",
-                "credentials": credentials,
-            })
-        )
-        TransactionsList.objects.filter(group=group_obj).update(status=1)
-        import os
-        log_dir = os.path.join(os.path.dirname(__file__), '../Log')
-        log_dir = os.path.abspath(log_dir)
-        os.makedirs(log_dir, exist_ok=True)
-        log_file = os.path.join(log_dir, f'{pn}.txt')
-        log_msg = f"\n[{timestamp}] Trigger pushed via WebSocket"
-        with open(log_file, "a", encoding="utf-8") as f:
-            f.write(log_msg)
-        return JsonResponse({"message": f"Task pushed to {pn}"})
-    else:
-        return Response({"error": f"Device {pn} not online"}, status=400)
+    # 自动调用 assign_pending_orders 派单
+    from django.test import RequestFactory
+    factory = RequestFactory()
+    assign_request = factory.post('/assign_pending_orders/')
+    assign_response = assign_pending_orders(assign_request)
+    try:
+        assign_data = assign_response.data
+    except Exception:
+        assign_data = None
+    return Response({
+        "status": "triggered",
+        "assign_result": assign_data
+    })
 
 

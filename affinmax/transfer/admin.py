@@ -11,7 +11,7 @@ class TransactionsGroupListAdmin(admin.ModelAdmin):
 @admin.register(TransactionsList)
 class TransactionsListAdmin(admin.ModelAdmin):
     list_display = ("tran_id", "group_id", "amount", "bene_acc_no", "bene_name", "bank_code", "recRef", "phone_number", "status", "complete_date", "updated_at", "error_message")
-    search_fields = ("id", "tran_id", "phone_number", "group_id")
+    search_fields = ("id", "tran_id", "phone_number", "group_id", "complete_date")
 
 # MobileList 后台
 @admin.register(MobileList)

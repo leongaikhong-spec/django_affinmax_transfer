@@ -253,34 +253,34 @@ function open_app() {
 // }
 
 function fill_corporate_and_user_id(corp_id, user_id) {
-    let corpIdLayout = id("fit_corp_id").findOne(10000);
+    let corpIdLayout = id("fit_corp_id").findOne(60000);
     let corpIdField = corpIdLayout.findOne(className("android.widget.EditText"));
     safeInput(corpIdField, corp_id);
     log("✅ Filled corporate ID");
 
-    let userIdLayout = id("fit_user_id").findOne(10000);
+    let userIdLayout = id("fit_user_id").findOne(60000);
     let userIdField = userIdLayout.findOne(className("android.widget.EditText"));
     safeInput(userIdField, user_id);
     log("✅ Filled user ID");
 
-    id("btn_next").findOne(10000).click();
+    id("btn_next").findOne(60000).click();
     log("✅ Clicked next button");
 }
 
 function fill_password(password) {
     log("👉 Filling login password...");
-    let pwdLayout = id("fit_password").findOne(10000);
+    let pwdLayout = id("fit_password").findOne(60000);
     let pwdField = pwdLayout.findOne(className("android.widget.EditText"));
     safeInput(pwdField, password);
     log("✅ Password filled");
 
-    id("btn_login").findOne(10000).click();
+    id("btn_login").findOne(60000).click();
     log("✅ Clicked login button");
 }
 
 function show_balance() {
     //sleep(1000);
-    let balanceBtn = id("ib_masking_balance").findOne(20000);
+    let balanceBtn = id("ib_masking_balance").findOne(60000);
     if (balanceBtn) {
         //click(465, 410); 
         balanceBtn.click();
@@ -290,7 +290,7 @@ function show_balance() {
 
 function check_balance(beneficiaries) {
     sleep(1000);
-    let balanceTextView = id("tv_total_available_balance").findOne(10000);
+    let balanceTextView = id("tv_total_available_balance").findOne(60000);
     if (!balanceTextView) {
         log("❌ Could not find balance element");
         return null;
@@ -323,7 +323,7 @@ function check_balance(beneficiaries) {
 }
 
 function click_duit_now() {
-    let duitNowBtn = id("rl_container").findOne(10000);
+    let duitNowBtn = id("rl_container").findOne(60000);
     if (!duitNowBtn) {
 
     }
@@ -331,7 +331,7 @@ function click_duit_now() {
     log("✅ Clicked DuitNow button");
     sleep(500);
 
-    if (id("tv_label").text("DuitNow Transfer").findOne(10000)) {
+    if (id("tv_label").text("DuitNow Transfer").findOne(60000)) {
         click(197, 603);
         log("✅ Clicked DuitNow Transfer button");
         sleep(500);
@@ -339,7 +339,7 @@ function click_duit_now() {
 
     }
 
-    if (id("tv_label").text("Pay to Account").findOne(10000)) {
+    if (id("tv_label").text("Pay to Account").findOne(60000)) {
         click(197, 603);
         log("✅ Clicked Pay to Account button");
         sleep(500);
@@ -347,7 +347,7 @@ function click_duit_now() {
 
     }
 
-    if (id("tv_label").text("New Transfer").findOne(10000)) {
+    if (id("tv_label").text("New Transfer").findOne(60000)) {
         click(197, 603);
         log("✅ Clicked New Transfer button");
         sleep(500);
@@ -355,14 +355,14 @@ function click_duit_now() {
 
     }
 
-    if (!id("text_input_end_icon").findOne(10000)) {
+    if (!id("text_input_end_icon").findOne(60000)) {
 
     }
     log("✅ Bank selection button found");
 }
 
 function transaction_details() {
-    id('text_input_end_icon').findOne(10000).click();
+    id('text_input_end_icon').findOne(60000).click();
     log("✅ Clicked dropdown button");
 
     sleep(1000);
@@ -371,12 +371,12 @@ function transaction_details() {
 }
 
 function add_beneficiary_button() {
-    id('btn_add_bene').findOne(10000).click();
+    id('btn_add_bene').findOne(60000).click();
     log("✅ Clicked Add Beneficiary button");
 }
 
 function beneficiary_details(amount, accNo, name) {
-    let title = id("tv_bene_details").findOne(10000);
+    let title = id("tv_bene_details").findOne(60000);
     if (!title || title.text() !== "Beneficiary") {
         log("❌ Not on Beneficiary page, cannot proceed.");
         throw new Error("Not on Beneficiary page");
@@ -385,24 +385,24 @@ function beneficiary_details(amount, accNo, name) {
     id('rb_open_bene').click();
     log("✅ Chosen beneficiary type");
 
-    id('text_input_end_icon').findOne(10000).click();
+    id('text_input_end_icon').findOne(60000).click();
     log("✅ Clicked dropdown button for transaction type");
 
     sleep(1000);        
     click(200, 466);
     log("✅ Chosen transaction type");
 
-    let transAmount = id("fic_transaction_amount").findOne(10000);
+    let transAmount = id("fic_transaction_amount").findOne(60000);
     let amountField = transAmount.findOne(className("android.widget.EditText"));
     safeInput(amountField, amount);
     log("✅ Filled transaction amount");
 
-    let beneAcc = id("fit_bene_acc_no").findOne(10000);
+    let beneAcc = id("fit_bene_acc_no").findOne(60000);
     let accNoField = beneAcc.findOne(className("android.widget.EditText"));
     safeInput(accNoField, accNo);
     log("✅ Filled beneficiary account no");
 
-    let beneName = id("fit_bene_name").findOne(10000);
+    let beneName = id("fit_bene_name").findOne(60000);
     let nameField = beneName.findOne(className("android.widget.EditText"));
     safeInput(nameField, name);
     log("✅ Filled beneficiary name");
@@ -479,7 +479,7 @@ function choose_bank(bankCode) {
         return;
     }
 
-    id('btn_select_beneficiary_bank').findOne(10000).click();
+    id('btn_select_beneficiary_bank').findOne(60000).click();
     log("✅ Clicked select beneficiary bank button");
 
     let targetBank = bankMap[bankCode];
@@ -507,7 +507,7 @@ function findAndClickBank(bankName) {
     }
 
     // If not found, try clicking "Load More"
-    let loadMoreBtn = id("cstly_load_more").findOne(10000);
+    let loadMoreBtn = id("cstly_load_more").findOne(60000);
     if (loadMoreBtn) {
         click(360, 1457);
         log("✅ Clicked More Result button");
@@ -532,7 +532,7 @@ function findAndClickBank(bankName) {
 }
 
 function resident_option() {
-    id('rb_resident_yes').findOne(10000).click();
+    id('rb_resident_yes').findOne(60000).click();
     log("✅ Resident option selected");
 }
 
@@ -540,19 +540,19 @@ function additional_beneficiary_details(recRef) {
     scrollDown();
     log("✅ Scrolled down");
 
-    let recipientReference = id("fit_recipient_ref").findOne(10000);
+    let recipientReference = id("fit_recipient_ref").findOne(60000);
     let recRefFeild = recipientReference.findOne(className("android.widget.EditText"));
     safeInput(recRefFeild, recRef);
     log("✅ Filled recipient reference");
 }
 
 function click_order_details() {
-    id('rb_not_related').findOne(10000).click();
+    id('rb_not_related').findOne(60000).click();
     log("✅ Clicked order details");
 }
 
 function click_ok() {
-    let okBtn = id('btn_ok').findOne(10000);
+    let okBtn = id('btn_ok').findOne(60000);
     if (okBtn) {
         okBtn.click();
         log("✅ Clicked OK button on finish adding beneficiary");
@@ -575,7 +575,7 @@ function click_ok() {
 }
 
 function check_bene(expectedName, similarityThreshold, tran_id) {
-    let msgView = id("tv_message").findOne(10000);
+    let msgView = id("tv_message").findOne(60000);
     let msgText = msgView.text();
 
     const errorKeywords = [
@@ -630,11 +630,11 @@ function check_bene(expectedName, similarityThreshold, tran_id) {
 }
 
 function name_not_match() {
-    let cancelBtn = id('btn_cancel').findOne(10000);
+    let cancelBtn = id('btn_cancel').findOne(60000);
     if (cancelBtn) cancelBtn.click();
     log("✅ Clicked Cancel button after name mismatch");
 
-    let backBtn = id('btn_title_left').findOne(10000);
+    let backBtn = id('btn_title_left').findOne(60000);
     if (backBtn) backBtn.click();
     log("✅ Clicked Back button after name mismatch");
 
@@ -643,11 +643,11 @@ function name_not_match() {
 
 function handle_failed_beneficiary() {
     try {
-        let okBtn = id('btn_ok').findOne(10000);
+        let okBtn = id('btn_ok').findOne(60000);
         if (okBtn) okBtn.click();
         log("✅ Clicked OK button on error dialog");
 
-        let backBtn = id('btn_title_left').findOne(10000);
+        let backBtn = id('btn_title_left').findOne(60000);
         if (backBtn) backBtn.click();
         log("✅ Clicked Back button");
 
@@ -669,66 +669,66 @@ function save_screenshot(tran_id) {
 }
 
 function click_confirm() {
-    id('btn_confirm').findOne(10000).click();
+    id('btn_confirm').findOne(60000).click();
     log("✅ Clicked Confirm button");
 }
 
 function preview_button() {
     log("-".repeat(18) + (" Finished filling beneficiary details ") + "-".repeat(18));
-    id('btn_preview').findOne(10000).click();
+    id('btn_preview').findOne(60000).click();
     log("✅ Clicked Preview button");
 }
 
 function confirm_transfer() {
-    id('checkbox').findOne(10000).click();
+    id('checkbox').findOne(60000).click();
     log("✅ Clicked t&c checkbox");
 
-    id('btn_submit').findOne(10000).click();
+    id('btn_submit').findOne(60000).click();
     log("✅ Clicked Submit button");
 }
 
 function approve() {
-    id('btn_approve').findOne(20000).click();
+    id('btn_approve').findOne(60000).click();
     log("✅ Clicked Approve button");
 }
 
 function transfer_password(tranPass) {
     log("👉 Filling transaction password...");
-    let passField = id("edit_security").findOne(10000);
+    let passField = id("edit_security").findOne(60000);
     safeInput(passField, tranPass);
     log("✅ Filled transaction password");
 
-    id('btn_ok').findOne(10000).click();
+    id('btn_ok').findOne(60000).click();
     log("✅ Clicked OK button");
 }
 
 function success_transfer() {
-    if (id('tv_status_title').text("SUCCESSFUL").findOne(10000)) {
-        id('btn_done').findOne(10000).click();
+    if (id('tv_status_title').text("SUCCESSFUL").findOne(60000)) {
+        id('btn_done').findOne(60000).click();
         log("✅ Transfer successful, clicked Done button");
     }
 }
 
 function download_transfer_slip() {
     sleep(2000);
-    id('tv_download').findOne(10000).click();
+    id('tv_download').findOne(60000).click();
     log("✅ Clicked Download button");
 
-    id('btn_ok').findOne(10000).click();
+    id('btn_ok').findOne(60000).click();
     log("✅ Clicked OK button");
 }
 
 function nav_accounts() {
-    id('accounts').findOne(10000).click();
+    id('accounts').findOne(60000).click();
     log("✅ Navigated to Accounts tab");
 }
 
 function grab_balance() {
     sleep(500);
-    let accountTypeTitle = id('tv_account_type_title').findOne(30000);
+    let accountTypeTitle = id('tv_account_type_title').findOne(60000);
     if (!accountTypeTitle) return null;
 
-    let balanceTextView = id('tv_total_available_balance').findOne(10000);
+    let balanceTextView = id('tv_total_available_balance').findOne(60000);
     if (balanceTextView) {
         let balanceText = balanceTextView.text();
         let balanceValue = toNumber(balanceText);
