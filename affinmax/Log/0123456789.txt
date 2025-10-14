@@ -464,3 +464,283 @@
 [2025-10-13 18:47:09] ✅ Closed affinmax app
 [2025-10-13 18:47:09] --------------------------------------------------------------------------
 [2025-10-13 18:47:12] ✅ Set is_busy = 0
+[2025-10-14 12:29:05] 
+[2025-10-14 12:29:05] ✅ WebSocket connected
+[2025-10-14 12:29:05] 
+[2025-10-14 12:34:15] 
+[2025-10-14 12:34:15] 
+[2025-10-14 12:34:15] 
+[2025-10-14 12:34:15] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": null, "beneficiaries": [{"tran_id": "82", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}, {"tran_id": "83", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}, {"tran_id": "85", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}, {"tran_id": "84", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}, {"tran_id": "86", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}], "log_file": "0123456789.txt", "device": "0123456789", "group_id": "33", "is_activated": 1}}
+[2025-10-14 12:34:15] 🚀 Launching transfer.js...
+[2025-10-14 12:34:15] --------------------------------------------------------------------------
+[2025-10-14 12:34:15] Script run started at Tue Oct 14 2025 12:34:15 GMT+0800 (GMT+08:00)
+[2025-10-14 12:34:15] --------------------------------------------------------------------------
+[2025-10-14 12:34:15] ✅ Set is_busy = 1
+[2025-10-14 12:34:15] ➡️ Beneficiary Details 1
+[2025-10-14 12:34:15]    Transfer ID     : 82
+[2025-10-14 12:34:15]    Name            : spring enterprise
+[2025-10-14 12:34:15]    Account No      : 20206900069899
+[2025-10-14 12:34:16]    Transfer Amount : 5.00
+[2025-10-14 12:34:16]    Bank Code       : 49
+[2025-10-14 12:34:16] --------------------------------------------------------------------------
+[2025-10-14 12:34:16] ➡️ Beneficiary Details 2
+[2025-10-14 12:34:16]    Transfer ID     : 83
+[2025-10-14 12:34:16]    Name            : spring enterprise
+[2025-10-14 12:34:16]    Account No      : 20206900069899
+[2025-10-14 12:34:16]    Transfer Amount : 5.00
+[2025-10-14 12:34:16]    Bank Code       : 49
+[2025-10-14 12:34:16] --------------------------------------------------------------------------
+[2025-10-14 12:34:16] ➡️ Beneficiary Details 3
+[2025-10-14 12:34:16]    Transfer ID     : 85
+[2025-10-14 12:34:16]    Name            : spring enterprise
+[2025-10-14 12:34:16]    Account No      : 20206900069899
+[2025-10-14 12:34:16]    Transfer Amount : 5.00
+[2025-10-14 12:34:16]    Bank Code       : 49
+[2025-10-14 12:34:17] --------------------------------------------------------------------------
+[2025-10-14 12:34:17] ➡️ Beneficiary Details 4
+[2025-10-14 12:34:17]    Transfer ID     : 84
+[2025-10-14 12:34:17]    Name            : spring enterprise
+[2025-10-14 12:34:17]    Account No      : 20206900069899
+[2025-10-14 12:34:17]    Transfer Amount : 5.00
+[2025-10-14 12:34:17]    Bank Code       : 49
+[2025-10-14 12:34:17] --------------------------------------------------------------------------
+[2025-10-14 12:34:17] ➡️ Beneficiary Details 5
+[2025-10-14 12:34:17]    Transfer ID     : 86
+[2025-10-14 12:34:17]    Name            : spring enterprise
+[2025-10-14 12:34:17]    Account No      : 20206900069899
+[2025-10-14 12:34:17]    Transfer Amount : 5.00
+[2025-10-14 12:34:17]    Bank Code       : 49
+[2025-10-14 12:34:17] --------------------------------------------------------------------------
+[2025-10-14 12:34:17] ✅ Opened AffinMax app
+[2025-10-14 12:35:18] ---------------------- Total runtime: 62.526 seconds ---------------------
+[2025-10-14 12:35:18] {"status":"7","tran_id":"82","message":"Something went wrong","errorMessage":"Automation fail at fill_corporate_and_user_id","balance":"null"}
+[2025-10-14 12:35:18] {"status":"7","tran_id":"83","message":"Something went wrong","errorMessage":"Automation fail at fill_corporate_and_user_id","balance":"null"}
+[2025-10-14 12:35:18] {"status":"7","tran_id":"85","message":"Something went wrong","errorMessage":"Automation fail at fill_corporate_and_user_id","balance":"null"}
+[2025-10-14 12:35:18] {"status":"7","tran_id":"84","message":"Something went wrong","errorMessage":"Automation fail at fill_corporate_and_user_id","balance":"null"}
+[2025-10-14 12:35:18] {"status":"7","tran_id":"86","message":"Something went wrong","errorMessage":"Automation fail at fill_corporate_and_user_id","balance":"null"}
+[2025-10-14 12:35:20] ✅ Set is_busy = 0 (error case)
+[2025-10-14 12:40:51] 
+[2025-10-14 12:40:51] ✅ WebSocket connected
+[2025-10-14 12:40:51] 
+[2025-10-14 12:41:08] 
+[2025-10-14 12:41:08] 
+[2025-10-14 12:41:08] 
+[2025-10-14 12:41:08] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": null, "beneficiaries": [{"tran_id": "87", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}, {"tran_id": "88", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}, {"tran_id": "89", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}, {"tran_id": "90", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}, {"tran_id": "91", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}], "log_file": "0123456789.txt", "device": "0123456789", "group_id": "34", "is_activated": 1}}
+[2025-10-14 12:41:08] 🚀 Launching transfer.js...
+[2025-10-14 12:41:08] --------------------------------------------------------------------------
+[2025-10-14 12:41:08] Script run started at Tue Oct 14 2025 12:41:08 GMT+0800 (GMT+08:00)
+[2025-10-14 12:41:09] --------------------------------------------------------------------------
+[2025-10-14 12:41:09] ✅ Set is_busy = 1
+[2025-10-14 12:41:09] ➡️ Beneficiary Details 1
+[2025-10-14 12:41:09]    Transfer ID     : 87
+[2025-10-14 12:41:09]    Name            : spring enterprise
+[2025-10-14 12:41:09]    Account No      : 20206900069899
+[2025-10-14 12:41:09]    Transfer Amount : 5.00
+[2025-10-14 12:41:09]    Bank Code       : 49
+[2025-10-14 12:41:09] --------------------------------------------------------------------------
+[2025-10-14 12:41:09] ➡️ Beneficiary Details 2
+[2025-10-14 12:41:09]    Transfer ID     : 88
+[2025-10-14 12:41:09]    Name            : spring enterprise
+[2025-10-14 12:41:10]    Account No      : 20206900069899
+[2025-10-14 12:41:10]    Transfer Amount : 5.00
+[2025-10-14 12:41:10]    Bank Code       : 49
+[2025-10-14 12:41:10] --------------------------------------------------------------------------
+[2025-10-14 12:41:10] ➡️ Beneficiary Details 3
+[2025-10-14 12:41:10]    Transfer ID     : 89
+[2025-10-14 12:41:10]    Name            : spring enterprise
+[2025-10-14 12:41:10]    Account No      : 20206900069899
+[2025-10-14 12:41:10]    Transfer Amount : 5.00
+[2025-10-14 12:41:10]    Bank Code       : 49
+[2025-10-14 12:41:10] --------------------------------------------------------------------------
+[2025-10-14 12:41:10] ➡️ Beneficiary Details 4
+[2025-10-14 12:41:10]    Transfer ID     : 90
+[2025-10-14 12:41:10]    Name            : spring enterprise
+[2025-10-14 12:41:11]    Account No      : 20206900069899
+[2025-10-14 12:41:11]    Transfer Amount : 5.00
+[2025-10-14 12:41:11]    Bank Code       : 49
+[2025-10-14 12:41:11] --------------------------------------------------------------------------
+[2025-10-14 12:41:11] ➡️ Beneficiary Details 5
+[2025-10-14 12:41:11]    Transfer ID     : 91
+[2025-10-14 12:41:11]    Name            : spring enterprise
+[2025-10-14 12:41:11]    Account No      : 20206900069899
+[2025-10-14 12:41:11]    Transfer Amount : 5.00
+[2025-10-14 12:41:11]    Bank Code       : 49
+[2025-10-14 12:41:11] --------------------------------------------------------------------------
+[2025-10-14 12:41:11] ✅ Opened AffinMax app
+[2025-10-14 12:41:13] ✅ Filled corporate ID
+[2025-10-14 12:41:14] ✅ Filled user ID
+[2025-10-14 12:41:14] ✅ Clicked next button
+[2025-10-14 12:41:14] 👉 Filling login password...
+[2025-10-14 12:41:15] ✅ Password filled
+[2025-10-14 12:41:15] ✅ Clicked login button
+[2025-10-14 12:41:19] ✅ Clicked Show Balance button
+[2025-10-14 12:41:20] 💰 Current balance: 65 | Total transfer amount: 25
+[2025-10-14 12:41:20] ✅ Balance is sufficient, continue transfer
+[2025-10-14 12:41:21] ✅ Clicked DuitNow button
+[2025-10-14 12:41:21] ✅ Clicked DuitNow Transfer button
+[2025-10-14 12:41:22] ✅ Clicked Pay to Account button
+[2025-10-14 12:41:23] ✅ Clicked New Transfer button
+[2025-10-14 12:41:23] ✅ Bank selection button found
+[2025-10-14 12:41:23] ✅ Clicked dropdown button
+[2025-10-14 12:41:25] ✅ Chosen debit from account no./currency
+[2025-10-14 12:41:25] ---------------------- Adding beneficiary details 1 ----------------------
+[2025-10-14 12:41:25] ✅ Clicked Add Beneficiary button
+[2025-10-14 12:41:25] ❌ Not on Beneficiary page, cannot proceed.
+[2025-10-14 12:41:25] ---------------------- Total runtime: 16.992 seconds ---------------------
+[2025-10-14 12:41:25] {"status":"7","tran_id":"87","message":"Something went wrong","errorMessage":"Automation fail at beneficiary_details","balance":65}
+[2025-10-14 12:41:26] {"status":"7","tran_id":"88","message":"Something went wrong","errorMessage":"Automation fail at beneficiary_details","balance":65}
+[2025-10-14 12:41:26] {"status":"7","tran_id":"89","message":"Something went wrong","errorMessage":"Automation fail at beneficiary_details","balance":65}
+[2025-10-14 12:41:26] {"status":"7","tran_id":"90","message":"Something went wrong","errorMessage":"Automation fail at beneficiary_details","balance":65}
+[2025-10-14 12:41:26] {"status":"7","tran_id":"91","message":"Something went wrong","errorMessage":"Automation fail at beneficiary_details","balance":65}
+[2025-10-14 12:41:28] ✅ Set is_busy = 0 (error case)
+[2025-10-14 12:41:28] 
+[2025-10-14 12:41:28] 
+[2025-10-14 12:41:28] 
+[2025-10-14 12:41:28] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": null, "beneficiaries": [{"tran_id": "92", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}, {"tran_id": "93", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}], "log_file": "0123456789.txt", "device": "0123456789", "group_id": "35", "is_activated": 1}}
+[2025-10-14 12:41:28] 🚀 Launching transfer.js...
+[2025-10-14 12:41:28] --------------------------------------------------------------------------
+[2025-10-14 12:41:29] Script run started at Tue Oct 14 2025 12:41:28 GMT+0800 (GMT+08:00)
+[2025-10-14 12:41:29] --------------------------------------------------------------------------
+[2025-10-14 12:41:29] ✅ Set is_busy = 1
+[2025-10-14 12:41:29] ➡️ Beneficiary Details 1
+[2025-10-14 12:41:29]    Transfer ID     : 92
+[2025-10-14 12:41:29]    Name            : spring enterprise
+[2025-10-14 12:41:29]    Account No      : 20206900069899
+[2025-10-14 12:41:29]    Transfer Amount : 5.00
+[2025-10-14 12:41:29]    Bank Code       : 49
+[2025-10-14 12:41:29] --------------------------------------------------------------------------
+[2025-10-14 12:41:29] ➡️ Beneficiary Details 2
+[2025-10-14 12:41:29]    Transfer ID     : 93
+[2025-10-14 12:41:29]    Name            : spring enterprise
+[2025-10-14 12:41:29]    Account No      : 20206900069899
+[2025-10-14 12:41:30]    Transfer Amount : 5.00
+[2025-10-14 12:41:30]    Bank Code       : 49
+[2025-10-14 12:41:30] --------------------------------------------------------------------------
+[2025-10-14 12:41:30] ✅ Opened AffinMax app
+[2025-10-14 12:42:30] ---------------------- Total runtime: 61.374 seconds ---------------------
+[2025-10-14 12:42:30] {"status":"7","tran_id":"92","message":"Something went wrong","errorMessage":"Automation fail at fill_corporate_and_user_id","balance":"null"}
+[2025-10-14 12:42:30] {"status":"7","tran_id":"93","message":"Something went wrong","errorMessage":"Automation fail at fill_corporate_and_user_id","balance":"null"}
+[2025-10-14 12:42:32] ✅ Set is_busy = 0 (error case)
+[2025-10-14 12:45:46] 
+[2025-10-14 12:45:46] ✅ WebSocket connected
+[2025-10-14 12:45:46] 
+[2025-10-14 12:47:54] 
+[2025-10-14 12:47:54] 
+[2025-10-14 12:47:54] 
+[2025-10-14 12:47:54] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": null, "beneficiaries": [{"tran_id": "94", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}], "log_file": "0123456789.txt", "device": "0123456789", "group_id": "36", "is_activated": 1}}
+[2025-10-14 12:47:54] 🚀 Launching transfer.js...
+[2025-10-14 12:47:54] --------------------------------------------------------------------------
+[2025-10-14 12:47:54] Script run started at Tue Oct 14 2025 12:47:54 GMT+0800 (GMT+08:00)
+[2025-10-14 12:47:54] --------------------------------------------------------------------------
+[2025-10-14 12:47:55] ✅ Set is_busy = 1
+[2025-10-14 12:47:55] ➡️ Beneficiary Details 1
+[2025-10-14 12:47:55]    Transfer ID     : 94
+[2025-10-14 12:47:55]    Name            : spring enterprise
+[2025-10-14 12:47:55]    Account No      : 20206900069899
+[2025-10-14 12:47:55]    Transfer Amount : 5.00
+[2025-10-14 12:47:55]    Bank Code       : 49
+[2025-10-14 12:47:55] --------------------------------------------------------------------------
+[2025-10-14 12:47:55] ✅ Opened AffinMax app
+[2025-10-14 12:47:59] ✅ Filled corporate ID
+[2025-10-14 12:47:59] ✅ Filled user ID
+[2025-10-14 12:47:59] ✅ Clicked next button
+[2025-10-14 12:47:59] 👉 Filling login password...
+[2025-10-14 12:48:00] ✅ Password filled
+[2025-10-14 12:48:01] ✅ Clicked login button
+[2025-10-14 12:48:03] ✅ Clicked Show Balance button
+[2025-10-14 12:48:05] ❌ Unable to retrieve valid balance, skip insufficient balance check
+[2025-10-14 12:48:05] {"status":"3","tran_id":"94","message":"Insufficient balance","errorMessage":"Balance less than transfer amount","balance":null}
+[2025-10-14 12:48:07] --------------------------------------------------------------------------
+[2025-10-14 12:48:07] ✅ Closed affinmax app
+[2025-10-14 12:48:07] --------------------------------------------------------------------------
+[2025-10-14 12:48:09] ✅ Set is_busy = 0
+[2025-10-14 12:48:09] 
+[2025-10-14 12:48:10] 
+[2025-10-14 12:48:10] 
+[2025-10-14 12:48:10] 📩 Received message: {"action": "start", "credentials": {"corp_id": "202503161267", "user_id": "PUTERA2025", "password": "Pass@2025", "tranPass": "123456", "similarityThreshold": null, "beneficiaries": [{"tran_id": "95", "amount": "5.00", "bene_acc_no": "20206900069899", "bene_name": "spring enterprise", "bank_code": "49", "recRef": "test"}], "log_file": "0123456789.txt", "device": "0123456789", "group_id": "37", "is_activated": 1}}
+[2025-10-14 12:48:10] 🚀 Launching transfer.js...
+[2025-10-14 12:48:10] --------------------------------------------------------------------------
+[2025-10-14 12:48:10] Script run started at Tue Oct 14 2025 12:48:10 GMT+0800 (GMT+08:00)
+[2025-10-14 12:48:10] --------------------------------------------------------------------------
+[2025-10-14 12:48:10] ✅ Set is_busy = 1
+[2025-10-14 12:48:10] ➡️ Beneficiary Details 1
+[2025-10-14 12:48:10]    Transfer ID     : 95
+[2025-10-14 12:48:10]    Name            : spring enterprise
+[2025-10-14 12:48:10]    Account No      : 20206900069899
+[2025-10-14 12:48:10]    Transfer Amount : 5.00
+[2025-10-14 12:48:10]    Bank Code       : 49
+[2025-10-14 12:48:11] --------------------------------------------------------------------------
+[2025-10-14 12:48:11] ✅ Opened AffinMax app
+[2025-10-14 12:48:12] ✅ Filled corporate ID
+[2025-10-14 12:48:13] ✅ Filled user ID
+[2025-10-14 12:48:13] ✅ Clicked next button
+[2025-10-14 12:48:13] 👉 Filling login password...
+[2025-10-14 12:48:14] ✅ Password filled
+[2025-10-14 12:48:15] ✅ Clicked login button
+[2025-10-14 12:48:18] ✅ Clicked Show Balance button
+[2025-10-14 12:48:19] 💰 Current balance: 65 | Total transfer amount: 5
+[2025-10-14 12:48:20] ✅ Balance is sufficient, continue transfer
+[2025-10-14 12:48:20] ✅ Clicked DuitNow button
+[2025-10-14 12:48:21] ✅ Clicked DuitNow Transfer button
+[2025-10-14 12:48:21] ✅ Clicked Pay to Account button
+[2025-10-14 12:48:22] ✅ Clicked New Transfer button
+[2025-10-14 12:48:23] ✅ Bank selection button found
+[2025-10-14 12:48:23] ✅ Clicked dropdown button
+[2025-10-14 12:48:24] ✅ Chosen debit from account no./currency
+[2025-10-14 12:48:24] ---------------------- Adding beneficiary details 1 ----------------------
+[2025-10-14 12:48:24] ✅ Clicked Add Beneficiary button
+[2025-10-14 12:48:25] ✅ Chosen beneficiary type
+[2025-10-14 12:48:26] ✅ Clicked dropdown button for transaction type
+[2025-10-14 12:48:27] ✅ Chosen transaction type
+[2025-10-14 12:48:27] ✅ Filled transaction amount
+[2025-10-14 12:48:28] ✅ Filled beneficiary account no
+[2025-10-14 12:48:29] ✅ Filled beneficiary name
+[2025-10-14 12:48:29] ✅ Clicked select beneficiary bank button
+[2025-10-14 12:48:29] 🔍 Selecting bank: RHB BANK
+[2025-10-14 12:48:29] 🔍 Searching bank
+[2025-10-14 12:48:35] ✅ Selected RHB BANK
+[2025-10-14 12:48:36] ✅ Resident option selected
+[2025-10-14 12:48:36] ✅ Scrolled down
+[2025-10-14 12:48:37] ✅ Filled recipient reference
+[2025-10-14 12:48:37] ✅ Clicked order details
+[2025-10-14 12:48:37] ✅ Clicked OK button on finish adding beneficiary
+[2025-10-14 12:48:39] 👤 Registered name: SPRING FOOD ENTERPRISE
+[2025-10-14 12:48:40] 👤 Fill in name  : spring enterprise
+[2025-10-14 12:48:40] ✅ - The names are at least 0% similar.
+[2025-10-14 12:48:40] 📸 Screenshot saved: /sdcard/Pictures/affinmax_confirm_custname_95.png
+[2025-10-14 12:48:40] ✅ Clicked Confirm button
+[2025-10-14 12:48:41] ✅ Finished adding beneficiary details 1
+[2025-10-14 12:48:41] ------------------ Finished filling beneficiary details ------------------
+[2025-10-14 12:48:41] ✅ Clicked Preview button
+[2025-10-14 12:48:42] ✅ Clicked t&c checkbox
+[2025-10-14 12:48:42] ✅ Clicked Submit button
+[2025-10-14 12:49:03] ✅ Clicked Approve button
+[2025-10-14 12:49:03] 👉 Filling transaction password...
+[2025-10-14 12:49:03] ✅ Filled transaction password
+[2025-10-14 12:49:04] ✅ Clicked OK button
+[2025-10-14 12:49:06] ✅ Transfer successful, clicked Done button
+[2025-10-14 12:49:14] ✅ Clicked Download button
+[2025-10-14 12:49:14] ✅ Clicked OK button
+[2025-10-14 12:49:15] ✅ Navigated to Accounts tab
+[2025-10-14 12:49:18] ---------------------- Total runtime: 65.046 seconds ---------------------
+[2025-10-14 12:49:18] {"status":"2","tran_id":"95","message":"Transaction Success","errorMessage":"Transaction Success","balance":60}
+[2025-10-14 12:49:19] Total success transfer amount: 5
+[2025-10-14 12:49:21] --------------------------------------------------------------------------
+[2025-10-14 12:49:21] ✅ Closed affinmax app
+[2025-10-14 12:49:21] --------------------------------------------------------------------------
+[2025-10-14 12:49:23] ✅ Set is_busy = 0
+[2025-10-14 12:53:27] 
+[2025-10-14 12:53:27] ✅ WebSocket connected
+[2025-10-14 12:53:27] 
+[2025-10-14 12:54:24] 
+[2025-10-14 12:54:24] ✅ WebSocket connected
+[2025-10-14 12:54:24] 
+[2025-10-14 12:54:30] 
+[2025-10-14 12:54:30] ✅ WebSocket connected
+[2025-10-14 12:54:30] 
+[2025-10-14 12:54:38] 
+[2025-10-14 12:54:38] ✅ WebSocket connected
+[2025-10-14 12:54:38] 
+[2025-10-14 12:54:56] 
+[2025-10-14 12:54:56] ✅ WebSocket connected
+[2025-10-14 12:54:56] 

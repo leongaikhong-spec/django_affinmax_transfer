@@ -377,9 +377,13 @@ function add_beneficiary_button() {
 
 function beneficiary_details(amount, accNo, name) {
     let title = id("tv_bene_details").findOne(60000);
-    if (!title || title.text() !== "Beneficiary") {
+    if (!title) {
         log("❌ Not on Beneficiary page, cannot proceed.");
-        throw new Error("Not on Beneficiary page");
+        return;
+    }
+    if (title.text() !== "Beneficiary") {
+        // 60秒内找到但不是 Beneficiary 页面，不报错，直接 return
+        return;
     }
 
     id('rb_open_bene').click();

@@ -57,6 +57,7 @@ def assign_pending_orders(request):
         if getattr(mobile, "is_online", False) and getattr(mobile, "is_activated", False) and not getattr(mobile, "is_busy", True):
             order.phone_number = mobile.device
             order.status = 1
+            order.error_message = "Pending"
         else:
             order.phone_number = ""
             order.status = 0
@@ -350,7 +351,8 @@ def trigger(request):
             bank_code=bene.get("bank_code"),
             recRef=bene.get("recRef"),
             phone_number="",
-            status=0
+            status=0,
+            error_message="Waiting"
         )
 
     # 没有可用设备，订单已入库，等待分配
