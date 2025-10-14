@@ -48,65 +48,55 @@ function toNumber(val) {
     return NaN;
 }
 
-function clickButton(desc, selector, timeout = 5000) {
-    let btn = (typeof selector === "string")
-        ? id(selector).findOne(timeout)
-        : selector.findOne(timeout);
-
-    if (btn) {
-        btn.click();
-        log(`✅ Clicked ${desc}`);
-        return true;
+function scroll(startRatio = 0.8, endRatio = 0.5, duration = 500, direction = "vertical") {
+    if (direction === "horizontal") {
+        // 横向滑动：从右到左
+        swipe(
+            device.width * startRatio,
+            device.height / 2,
+            device.width * endRatio,
+            device.height / 2,
+            duration
+        );
     } else {
-        log(`❌ ${desc} not found`);
-        close_app();
+        // 纵向滑动：从下到上
+        swipe(
+            device.width / 2,
+            device.height * startRatio,
+            device.width / 2,
+            device.height * endRatio,
+            duration
+        );
     }
 }
 
-function scrollDown(startRatio = 0.8, endRatio = 0.5, duration = 500) {
-    swipe(
-        device.width / 2,
-        device.height * startRatio,
-        device.width / 2,
-        device.height * endRatio,
-        duration
-    );
-}
-
-
-// function close_app() {
-//     recents();  
-//     sleep(1000);
-//     let clearAllBtn = id("clear_all").findOne(5000);
-//     if (clearAllBtn) {
-//         clearAllBtn.click();
-//         log("✅ Closed affinmax app")
-//     } else {
-//         log("❌ Not found Clear All button");
-//     }
-
-//     log("-".repeat(30));
-//     return false; // Return false to indicate app closure
-// }
-
 function close_app() { // Need to advance this function to close the app properly
-    for (let i = 0; i < 5; i++) { 
-        back();
-        sleep(400); 
-    } 
-    
-    app.startActivity({ 
-        action: "android.intent.action.MAIN", 
-        category: "android.intent.category.HOME", 
-        flags: ["activity_new_task"] 
-    }); 
-    
-    id('btn_ok').findOne(5000).click(); 
-    log("-".repeat(74));
-    log("✅ Closed affinmax app") 
-    log("-".repeat(74));
-    set_is_busy(0); // 流程结束后才设为 0
-    exit(); // Exit the script after closing the app
+    // 打开任务界面
+    recents();
+    sleep(1000);
+    scroll(0.5, 0.2, 100, "horizontal"); // 横向滑动
+
+    // 找到 AFFINMAX 卡片并向上滑动关闭
+    let taskCard = id("task_icon").desc("Advanced options, AFFINMAX, Button").findOne(5000);
+    if (taskCard) {
+
+        sleep(1000);
+        scroll(0.6, 0.2, 200); // 向上滑动关闭
+        sleep(1000);
+        home();
+
+        log("-".repeat(74));
+        log("✅ Closed AFFINMAX app from recents");
+        log("-".repeat(74));
+
+        set_is_busy(0); // 流程结束后才设为 0
+        exit(); // Exit the script after closing the app
+    } else {
+        log("❌ AFFINMAX task card not found in recents");
+
+        set_is_busy(0); // 流程结束后才设为 0
+        exit(); // Exit the script after closing the app
+    }
 }
 
 function stringSimilarity(a, b) {
@@ -222,6 +212,7 @@ function set_is_busy(val) {
 
 
 // 加stay在主页有单就pass掉login的process
+
 // ------ Automation functions start here ------
 function transfer_info(beneficiaries) {
 
@@ -333,7 +324,8 @@ function check_balance(beneficiaries) {
 function click_duit_now() {
     let duitNowBtn = id("rl_container").findOne(60000);
     if (!duitNowBtn) {
-
+        log("❌ DuitNow button not found after 60 seconds");
+        throw new Error("DuitNow button not found");
     }
     duitNowBtn.click();
     log("✅ Clicked DuitNow button");
@@ -344,7 +336,8 @@ function click_duit_now() {
         log("✅ Clicked DuitNow Transfer button");
         sleep(500);
     } else {
-
+        log("❌ DuitNow Transfer button not found after 60 seconds");
+        throw new Error("DuitNow Transfer button not found");
     }
 
     if (id("tv_label").text("Pay to Account").findOne(60000)) {
@@ -352,7 +345,8 @@ function click_duit_now() {
         log("✅ Clicked Pay to Account button");
         sleep(500);
     } else {
-
+        log("❌ Pay to Account button not found after 60 seconds");
+        throw new Error("Pay to Account button not found");
     }
 
     if (id("tv_label").text("New Transfer").findOne(60000)) {
@@ -360,7 +354,8 @@ function click_duit_now() {
         log("✅ Clicked New Transfer button");
         sleep(500);
     } else {
-
+        log("❌ New Transfer button not found after 60 seconds");
+        throw new Error("New Transfer button not found");
     }
 
     if (!id("text_input_end_icon").findOne(60000)) {
@@ -513,7 +508,7 @@ function findAndClickBank(bankName) {
             log("✅ Selected " + bankName);
             return true;
         }
-        scrollDown(0.8, 0.25);
+        scroll(0.8, 0.25);
         // scrollDown(0.95, 0.05);
         sleep(200);
     }
@@ -532,7 +527,7 @@ function findAndClickBank(bankName) {
                 log("✅ Selected " + bankName);
                 return true;
             }
-            scrollDown(0.8, 0.25);
+            scroll(0.8, 0.25);
             // scrollDown(0.95, 0.05);
             sleep(200);
         }
@@ -549,7 +544,7 @@ function resident_option() {
 }
 
 function additional_beneficiary_details(recRef) {
-    scrollDown();
+    scroll();
     log("✅ Scrolled down");
 
     let recipientReference = id("fit_recipient_ref").findOne(60000);
