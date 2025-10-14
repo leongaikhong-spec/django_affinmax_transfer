@@ -289,30 +289,38 @@ function show_balance() {
 }
 
 function check_balance(beneficiaries) {
-    sleep(1000);
-    let balanceTextView = id("tv_total_available_balance").findOne(60000);
-    if (!balanceTextView) {
-        log("❌ Could not find balance element");
+    let start = new Date().getTime();
+    let balanceValue = null;
+    let balanceText = "";
+    let balanceTextView = null;
+    let found = false;
+    while (new Date().getTime() - start < 60000) { // 最多等60秒
+        balanceTextView = id("tv_total_available_balance").findOne(1000);
+        if (balanceTextView) {
+            balanceText = balanceTextView.text();
+            balanceValue = toNumber(balanceText);
+            if (!isNaN(balanceValue) && balanceValue !== null) {
+                found = true;
+                break;
+            } else {
+                // 检测到 NaN 或 null 时尝试刷新余额
+                show_balance();
+            }
+        } else {
+            // 没找到余额控件时也尝试刷新
+            show_balance();
+        }
+    }
+    if (!found) {
+        log("❌ Unable to retrieve valid balance after 60 seconds, skip insufficient balance check");
         return null;
     }
-
-    let balanceText = balanceTextView.text();
-    let balanceValue = toNumber(balanceText);
-
-    // 只有 balanceValue 是有效数字才进行比对
-    if (isNaN(balanceValue) || balanceValue === null) {
-        log("❌ Unable to retrieve valid balance, skip insufficient balance check");
-        return null;
-    }
-
     // Calculate total transfer amount
     let totalAmount = 0;
     for (let i = 0; i < beneficiaries.length; i++) {
         totalAmount += toNumber(beneficiaries[i].amount);
     }
-
     log("💰 Current balance: " + balanceValue + " | Total transfer amount: " + totalAmount);
-
     if (totalAmount > balanceValue) {
         log("❌ Insufficient balance, stopping transfer");
         return null; // ❌ 余额不足，返回 null
