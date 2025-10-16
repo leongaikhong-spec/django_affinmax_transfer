@@ -70,7 +70,7 @@ function scroll(startRatio = 0.8, endRatio = 0.5, duration = 500, direction = "v
     }
 }
 
-function close_app() { // Need to advance this function to close the app properly
+function close_app() {
     // 打开任务界面
     recents();
     sleep(1000);
@@ -91,6 +91,7 @@ function close_app() { // Need to advance this function to close the app properl
 
         set_is_busy(0); // 流程结束后才设为 0
         exit(); // Exit the script after closing the app
+        
     } else {
         log("❌ AFFINMAX task card not found in recents");
 
@@ -1042,18 +1043,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
             update_backend_group_and_balance(data.group_id, null, balance);
         }
 
-        // 失败时回传 is_busy=0，保证设备释放
-        try {
-            http.postJson("http://" + SERVER_IP + ":8000/update_is_busy/", {
-                device: PHONE_NUMBER,
-                is_busy: 0
-            });
-            log("✅ Set is_busy = 0 (error case)");
-        } catch (e) {
-            log("❌ Failed to set is_busy = 0 (error case): " + e);
-        }
-
-    return close_app();
+        return close_app();
     }
 }
 
