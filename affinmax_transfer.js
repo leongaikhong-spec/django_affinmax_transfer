@@ -7,7 +7,7 @@ const PHONE_NUMBER = "0123456789";    // Current device phone number
 
 function log(msg) {
     try {
-    http.postJson("http://" + SERVER_IP + ":8000/log/", {
+    http.postJson("http://" + SERVER_IP + ":8000/backend/log/", {
             device: PHONE_NUMBER,
             message: msg
         });
@@ -146,7 +146,7 @@ function upload_transfer_log(beneficiaries, failedTranIds, error_status, message
     if (typeof beneficiaries !== "undefined" && Array.isArray(beneficiaries)) {
         beneficiaries.forEach(function(bene) {
             if (!failedTranIds.includes(String(bene.tran_id))) {
-                http.postJson("http://" + SERVER_IP + ":8000/log/", {
+                http.postJson("http://" + SERVER_IP + ":8000/backend/log/", {
                     device: PHONE_NUMBER,
                     message: JSON.stringify({
                         status: error_status,
@@ -182,13 +182,13 @@ function calc_success_amount(beneficiaries, failedTranIds) {
 
 function update_backend_group_and_balance(group_id, successAmount, balance) {
     if (typeof group_id !== "undefined") {
-    http.postJson("http://" + SERVER_IP + ":8000/update_group_success_amount/", {
+    http.postJson("http://" + SERVER_IP + ":8000/backend/update_group_success_amount/", {
             group_id: String(group_id),
             success_tran_amount: String(successAmount)
         });
         // 用 grab_balance() 获取最新余额
         let final_balance = typeof balance !== "undefined" ? balance : grab_balance();
-    http.postJson("http://" + SERVER_IP + ":8000/update_current_balance/", {
+    http.postJson("http://" + SERVER_IP + ":8000/backend/update_current_balance/", {
             device: PHONE_NUMBER,
             group_id: String(group_id),
             current_balance: String(final_balance)
@@ -199,7 +199,7 @@ function update_backend_group_and_balance(group_id, successAmount, balance) {
 // 设置 is_busy 状态
 function set_is_busy(val) {
     try {
-    http.postJson("http://" + SERVER_IP + ":8000/update_is_busy/", {
+    http.postJson("http://" + SERVER_IP + ":8000/backend/update_is_busy/", {
             device: PHONE_NUMBER,
             is_busy: val
         });
@@ -717,6 +717,51 @@ function success_transfer() {
     }
 }
 
+// 获取slip reference no并存储为 AFFINMAX_{reference_no}_DD MM YYYY 格式
+// function get_pdf_reference_no(beneficiaries) {
+//     let msgView = id("tv_message").findOne(60000);
+//     let msgText = msgView.text();
+
+    // sleep(1000);
+    // const result = [];
+    // const today = new Date();
+    // const pad = n => n < 10 ? '0' + n : n;
+    // const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    // const dateStr = `${pad(today.getDate())} ${MONTHS[today.getMonth()]} ${today.getFullYear()}`;
+    
+    // for (let i = 0; i < beneficiaries.length; i++) {
+    //     const bene = beneficiaries[i];
+    //     // 查找所有id为tv_title的节点，text等于bene.bene_name的就点击
+    //     const titleNodes = id('tv_title').find();
+    //     let found = false;
+    //     for (let j = 0; j < titleNodes.length; j++) {
+    //         const node = titleNodes[j];
+    //         if (node.text() === bene.bene_name) {
+    //             node.click();
+    //             found = true;
+    //             break;
+    //         }
+    //     }
+    //     if (found) {
+    //         sleep(500);
+    //         // 获取reference no
+    //         const refNoElem = document.querySelector ? document.querySelector('#tv_reference_no') : id('tv_reference_no').findOne(2000);
+    //         let referenceNo = '';
+    //         if (refNoElem) {
+    //             referenceNo = refNoElem.innerText ? refNoElem.innerText.trim() : refNoElem.text();
+    //         }
+    //         const backBtn = id('btn_title_left').findOne(1000);
+    //         if (backBtn) backBtn.click();
+    //         // 存储为 AFFINMAX_{referenceNo}_DD MMM YYYY
+    //         if (referenceNo) {
+    //             const fileName = `AFFINMAX_${referenceNo}_${dateStr}`;
+    //             result.push(fileName);
+    //         }
+    //     }
+    // }
+    // return result;
+//}
+
 function download_transfer_slip() {
     sleep(2000);
     id('tv_download').findOne(60000).click();
@@ -757,7 +802,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     let start_time = new Date();
 
     log('-'.repeat(74));
-    log(`Script run started at ${start_time}`);
+    log(`Make Transaction Script run started at ${start_time}`);
     log('-'.repeat(74));
     
     set_is_busy(1);
@@ -808,7 +853,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         if (bal === null) {
             // 余额不足时，调用后端API并带上所有tran_id
             data.beneficiaries.forEach(function(bene) {
-                http.postJson("http://" + SERVER_IP + ":8000/log/", {
+                http.postJson("http://" + SERVER_IP + ":8000/backend/log/", {
                     device: PHONE_NUMBER,
                     message: JSON.stringify({
                         status: "3",
@@ -995,6 +1040,15 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         return printError();
     }
 
+    // try {
+    //     var fileNames = get_pdf_reference_no(data.beneficiaries);
+    //     log("📄 PDF Reference Names: " + JSON.stringify(fileNames));
+    // } catch (e) {
+    //     error_status = "5";
+    //     message = "Transaction Success";
+    //     errorMessage = "Fail to get PDF reference no";
+    //     return printError();
+    // }
 
     try {
         download_transfer_slip();

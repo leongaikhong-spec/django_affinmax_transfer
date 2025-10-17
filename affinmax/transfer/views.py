@@ -123,7 +123,7 @@ def update_is_busy(request):
             import time
             time.sleep(2)  # 等待2秒
             factory = RequestFactory()
-            assign_request = factory.post('/assign_pending_orders/')
+            assign_request = factory.post('/backend/assign_pending_orders/')
             assign_response = assign_pending_orders(assign_request)
             try:
                 assign_data = assign_response.data
@@ -380,7 +380,7 @@ def trigger(request):
     # 自动调用 assign_pending_orders 派单
     from django.test import RequestFactory
     factory = RequestFactory()
-    assign_request = factory.post('/assign_pending_orders/')
+    assign_request = factory.post('/backend/assign_pending_orders/')
     assign_response = assign_pending_orders(assign_request)
     try:
         assign_data = assign_response.data
