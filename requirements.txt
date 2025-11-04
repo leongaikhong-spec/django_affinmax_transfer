@@ -9,3 +9,4 @@ whitenoise
 mysqlclient
 boto3
 python-dotenv
+requests

@@ -159,3 +159,14 @@ CHANNEL_LAYERS = {
         # "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
     }
 }
+
+# ==================== Telegram Bot 配置 ====================
+# 从环境变量读取，如果没有则使用空值（需要手动配置）
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')  # 从 BotFather 获取
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '')      # 你的 Chat ID 或群组 ID
+TELEGRAM_TOPIC_ID = os.getenv('TELEGRAM_TOPIC_ID', '')    # 群组 Topic ID（可选）
+
+# 如果你想直接在这里配置（不推荐，建议使用环境变量）：
+# TELEGRAM_BOT_TOKEN = '你的_Bot_Token'
+# TELEGRAM_CHAT_ID = '你的_Chat_ID'
+# TELEGRAM_TOPIC_ID = '你的_Topic_ID'

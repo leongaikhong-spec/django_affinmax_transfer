@@ -226,6 +226,8 @@ def add_transaction_status(request):
 @api_view(["POST"])
 def log(request):
     import os
+    from .telegram_bot import telegram_notifier
+    
     log_data = request.data
     log_dir = os.path.join(os.path.dirname(__file__), '../Log')
     log_dir = os.path.abspath(log_dir)
@@ -240,12 +242,14 @@ def log(request):
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(f"{timestamp} {msg}\n")
 
-    # 自动同步 status 到 TransactionsList
+    # 自动同步 status 到 TransactionsList 并发送 Telegram 通知
     try:
         msg_json = json.loads(msg)
         tran_id = msg_json.get('tran_id')
         status = msg_json.get('status')
         error_message = msg_json.get('errorMessage')
+        message_text = msg_json.get('message', '')
+        
         # 只处理有 tran_id 且 status 的日志
         if tran_id and status is not None:
             qs = TransactionsList.objects.filter(tran_id=tran_id)
@@ -258,8 +262,58 @@ def log(request):
                 from datetime import datetime
                 obj.complete_date = datetime.now()
                 obj.save()
+                
+                # 发送 Telegram 通知 - 只在出错时发送（status != "2"）
+                # status = "2" 表示成功，其他状态表示错误
+                if str(status) != "2":
+                    # 自动停用设备 (is_activated = 0)
+                    try:
+                        mobile = MobileList.objects.get(device=device_number)
+                        mobile.is_activated = False
+                        mobile.save()
+                    except MobileList.DoesNotExist:
+                        print(f"⚠️ Device {device_number} config not found for deactivation")
+                    except Exception as e:
+                        print(f"❌ Failed to deactivate device: {e}")
+
+                    # 发送错误通知（带按钮）
+                    telegram_notifier.send_error_notification(
+                        device=device_number,
+                        error_data={
+                            'status': status,
+                            'tran_id': tran_id,
+                            'message': message_text or error_message,
+                            'errorMessage': error_message
+                        }
+                    )
+        
+        # 检测余额不足的日志
+        if 'Insufficient balance' in msg or 'insufficient balance' in msg.lower():
+            # 尝试解析余额信息
+            try:
+                balance_match = msg_json.get('remaining_balance') or msg_json.get('current_balance')
+                if balance_match:
+                    telegram_notifier.send_insufficient_balance_notification(
+                        device=device_number,
+                        current_balance=balance_match,
+                        required_amount="N/A"
+                    )
+            except Exception:
+                pass
+                
+    except json.JSONDecodeError:
+        # 非 JSON 格式的日志，检查是否包含错误关键词
+        error_keywords = ['❌', 'error', 'fail', 'exception', 'catch', 'Something went wrong']
+        if any(keyword.lower() in msg.lower() for keyword in error_keywords):
+            # 发送简单的错误通知
+            telegram_notifier.send_automation_error(
+                device=device_number,
+                error_stage="Unknown",
+                error_details=msg[:500]  # 限制消息长度
+            )
     except Exception as e:
         # 非结构化日志或解析失败，跳过
+        print(f"[log] Error processing message: {e}")
         pass
 
     return Response({"status": "ok"})
@@ -530,3 +584,131 @@ def upload_s3(request):
         }, status=500)
 
 
+# ========== telegram_webhook ==========
+@csrf_exempt
+@api_view(["POST"])
+def telegram_webhook(request):
+    """
+    处理 Telegram Bot 的 webhook 回调
+    用于处理 Activate/Deactivate 按钮点击事件
+    """
+    try:
+        data = request.data
+        print(f"[telegram_webhook] Received data: {json.dumps(data, indent=2)}")
+        
+        # 检查是否是 callback_query（按钮点击）
+        if 'callback_query' not in data:
+            return Response({"status": "ok", "message": "Not a callback query"})
+        
+        callback_query = data['callback_query']
+        callback_data = callback_query.get('data', '')
+        callback_id = callback_query.get('id', '')
+        message = callback_query.get('message', {})
+        chat_id = message.get('chat', {}).get('id')
+        message_id = message.get('message_id')
+        
+        # 解析 callback_data: "activate_0123456789" 或 "deactivate_0123456789"
+        parts = callback_data.split('_', 1)
+        if len(parts) != 2:
+            return Response({"status": "error", "message": "Invalid callback data"}, status=400)
+        
+        action = parts[0]  # "activate" 或 "deactivate"
+        device = parts[1]   # 设备号码
+        
+        # 查找设备
+        try:
+            mobile = MobileList.objects.get(device=device)
+        except MobileList.DoesNotExist:
+            # 回复用户
+            answer_callback_query(callback_id, f"❌ 设备 {device} 未找到")
+            return Response({"status": "error", "message": "Device not found"}, status=404)
+        
+        # 执行操作
+        if action == "activate":
+            mobile.is_activated = True
+            mobile.save()
+            response_text = f"✅ 设备 {device} 已激活\n\n设备现在可以接收新的交易任务。"
+            answer_text = "✅ 设备已激活"
+        elif action == "deactivate":
+            mobile.is_activated = False
+            mobile.save()
+            response_text = f"❌ 设备 {device} 已停用\n\n设备将不会接收新的交易任务。"
+            answer_text = "❌ 设备已停用"
+        else:
+            answer_callback_query(callback_id, "❌ 无效的操作")
+            return Response({"status": "error", "message": "Invalid action"}, status=400)
+        
+        # 回复 callback query（移除 "加载中..." 提示）
+        answer_callback_query(callback_id, answer_text)
+        
+        # 编辑原消息，添加操作结果
+        edit_message_text(chat_id, message_id, response_text)
+        
+        return Response({
+            "status": "success",
+            "action": action,
+            "device": device,
+            "is_activated": mobile.is_activated
+        })
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"[telegram_webhook] Error: {str(e)}")
+        print(f"[telegram_webhook] Traceback: {error_details}")
+        return Response({
+            "status": "error",
+            "message": str(e),
+            "traceback": error_details
+        }, status=500)
+
+
+def answer_callback_query(callback_query_id, text):
+    """回复 callback query（显示提示消息）"""
+    from django.conf import settings
+    import requests
+    
+    bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
+    if not bot_token:
+        return False
+    
+    url = f"https://api.telegram.org/bot{bot_token}/answerCallbackQuery"
+    payload = {
+        'callback_query_id': callback_query_id,
+        'text': text,
+        'show_alert': False
+    }
+    
+    try:
+        response = requests.post(url, json=payload, timeout=10)
+        response.raise_for_status()
+        return True
+    except Exception as e:
+        print(f"❌ answer_callback_query failed: {e}")
+        return False
+
+
+def edit_message_text(chat_id, message_id, new_text):
+    """编辑消息内容"""
+    from django.conf import settings
+    import requests
+    
+    bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
+    if not bot_token:
+        return False
+    
+    url = f"https://api.telegram.org/bot{bot_token}/editMessageText"
+    payload = {
+        'chat_id': chat_id,
+        'message_id': message_id,
+        'text': new_text,
+        'parse_mode': 'HTML'
+    }
+    
+    try:
+        response = requests.post(url, json=payload, timeout=10)
+        response.raise_for_status()
+        return True
+    except Exception as e:
+        print(f"❌ edit_message_text failed: {e}")
+        return False

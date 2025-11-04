@@ -23,16 +23,10 @@ let isConnected = false;
 let heartbeatInterval = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT = 5;
-let pendingData = null; // 保留未派单数据
 
 function connectWebSocket(onMessageCallback) {
     if (ws && ws.readyState === 1) {
         // 已连接，无需重复连接
-        // 如果有未派单数据，自动派单
-        if (pendingData) {
-            sendTransfer(pendingData);
-            pendingData = null;
-        }
         return;
     }
     ws = new WebSocket("ws://" + SERVER_IP + ":" + SERVER_PORT + "/ws/" + PHONE_NUMBER + "/");
@@ -49,11 +43,6 @@ function connectWebSocket(onMessageCallback) {
                 ws.send(JSON.stringify({type: "ping", device: PHONE_NUMBER}));
             }
         }, 5000); // 每 5 秒心跳
-        // 如果有未派单数据，自动派单
-        if (pendingData) {
-            sendTransfer(pendingData);
-            pendingData = null;
-        }
     });
     ws.on("close", () => {
         isConnected = false;
