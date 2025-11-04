@@ -1,0 +1,24 @@
+{
+  "name": "django",
+  "version": "1.0.0",
+  "description": "",
+  "main": "affinmax_transfer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leongaikhong-spec/django_affinmax_transfer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/leongaikhong-spec/django_affinmax_transfer/issues"
+  },
+  "homepage": "https://github.com/leongaikhong-spec/django_affinmax_transfer#readme",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.66.0"
+  }
+}

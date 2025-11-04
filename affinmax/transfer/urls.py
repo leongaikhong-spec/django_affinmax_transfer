@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 
+
 urlpatterns = [
     path('script/create_mobile/', views.create_mobile, name="Create Mobile"),
     path("script/add_transaction_status/", views.add_transaction_status, name="Add Transaction Status"),
@@ -11,4 +12,5 @@ urlpatterns = [
     path('backend/update_current_balance/', views.update_current_balance, name="Update Current Balance"),
     path('backend/update_is_busy/', views.update_is_busy, name="Update Is Busy"),
     path('backend/assign_pending_orders/', views.assign_pending_orders, name="Assign Pending Orders"),
+    path('backend/upload_s3/', views.upload_s3, name="Upload to S3"),
 ]

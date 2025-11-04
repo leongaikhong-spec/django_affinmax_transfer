@@ -1,12 +1,14 @@
 "auto";
 "ui";
 
-const SERVER_IP = "192.168.100.202";  // 你的服务器IP
+
+const SERVER_IP = "18.142.225.168";  // 你的服务器IP
+const SERVER_PORT = "9001";           // 你的服务器端口
 const PHONE_NUMBER = "0123456789";    // 你的设备号码
 
 function log(msg) {
     try {
-    http.postJson("http://" + SERVER_IP + ":8000/backend/log/", {
+        http.postJson("http://" + SERVER_IP + ":" + SERVER_PORT + "/backend/log/", {
             device: PHONE_NUMBER,
             message: msg
         });
@@ -33,7 +35,7 @@ function connectWebSocket(onMessageCallback) {
         }
         return;
     }
-    ws = new WebSocket("ws://" + SERVER_IP + ":8000/ws/" + PHONE_NUMBER + "/");
+    ws = new WebSocket("ws://" + SERVER_IP + ":" + SERVER_PORT + "/ws/" + PHONE_NUMBER + "/");
     ws.on("open", () => {
         isConnected = true;
         reconnectAttempts = 0;
