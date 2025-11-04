@@ -50,7 +50,7 @@ Thumbs.db
 
 # Logs
 Log/
-*.txt
+Log/*.txt
 
 # Zip files
 *.zip

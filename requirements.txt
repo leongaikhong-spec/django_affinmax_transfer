@@ -1,0 +1,11 @@
+Django>=3.2
+uvicorn
+drf-yasg
+djangorestframework
+asgiref
+channels
+channels-redis
+whitenoise
+mysqlclient
+boto3
+python-dotenv
