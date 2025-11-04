@@ -1,13 +1,19 @@
 "auto";
 "ui";
 
-
-const SERVER_IP = "192.168.100.202";  // Device IP Address
+const SERVER_IP = "18.142.225.168";  // Device IP Address
+const SERVER_PORT = "9001";           // 你的服务器端口
 const PHONE_NUMBER = "0123456789";    // Current device phone number
+
+// AWS S3 配置 - 密钥将从后端获取
+const S3_CONFIG = {
+    "BucketName": "onepayrobot",
+    "Region": "ap-southeast-1"
+};
 
 function log(msg) {
     try {
-    http.postJson("http://" + SERVER_IP + ":8000/backend/log/", {
+            http.postJson("http://" + SERVER_IP + ":" + SERVER_PORT + "/backend/log/", {
             device: PHONE_NUMBER,
             message: msg
         });
@@ -16,8 +22,6 @@ function log(msg) {
     }
     console.log(msg);
 }
-
-// ...existing code...
 
 let error_status = "2";
 let message = "Transaction Success";
@@ -89,15 +93,18 @@ function close_app() {
         log("✅ Closed AFFINMAX app from recents");
         log("-".repeat(74));
 
-        set_is_busy(0); // 流程结束后才设为 0
-        exit(); // Exit the script after closing the app
-        
     } else {
         log("❌ AFFINMAX task card not found in recents");
 
         set_is_busy(0); // 流程结束后才设为 0
         exit(); // Exit the script after closing the app
     }
+}
+
+function complete_process() {
+    set_is_busy(0); // 流程结束后才设为 0
+    log("✅ Transaction process completed");
+    exit(); // Exit the script after closing the app
 }
 
 function stringSimilarity(a, b) {
@@ -120,20 +127,20 @@ function editDistance(s1, s2) {
     let costs = [];
     for (let i = 0; i <= s1.length; i++) {
         let lastValue = i;
-            for (let j = 0; j <= s2.length; j++) {
-                if (i === 0)
-                    costs[j] = j;
-                else {
-                    if (j > 0) {
-                        let newValue = costs[j - 1];
-                        if (s1.charAt(i - 1) !== s2.charAt(j - 1))
-                            newValue = Math.min(Math.min(newValue, lastValue),
-                                costs[j]) + 1;
-                        costs[j - 1] = lastValue;
-                        lastValue = newValue;
-                    }
+        for (let j = 0; j <= s2.length; j++) {
+            if (i === 0)
+                costs[j] = j;
+            else {
+                if (j > 0) {
+                    let newValue = costs[j - 1];
+                    if (s1.charAt(i - 1) !== s2.charAt(j - 1))
+                        newValue = Math.min(Math.min(newValue, lastValue),
+                            costs[j]) + 1;
+                    costs[j - 1] = lastValue;
+                    lastValue = newValue;
                 }
             }
+        }
         if (i > 0)
             costs[s2.length] = lastValue;
     }
@@ -142,18 +149,77 @@ function editDistance(s1, s2) {
 
 // ------ Utility functions for backend sync ------
 
+
+// AWS S3 上传函数
+function uploadToS3(filePath, fileName, tran_id) {
+    try {
+        // 检查文件是否存在
+        if (!files.exists(filePath)) {
+            log("❌ File does not exist: " + filePath);
+            return false;
+        }
+
+        // 读取文件为字节数组
+        let fileBytes = files.readBytes(filePath);
+        if (!fileBytes) {
+            log("❌ Failed to read file bytes: " + filePath);
+            return false;
+        }
+
+        // 将字节数组转换为 base64
+        let base64Data = android.util.Base64.encodeToString(fileBytes, android.util.Base64.NO_WRAP);
+        
+        // 构建上传请求
+        let uploadResponse = null;
+        try {
+            uploadResponse = http.postJson("http://" + SERVER_IP + ":" + SERVER_PORT + "/backend/upload_s3/", {
+                device: PHONE_NUMBER,
+                fileName: fileName,
+                fileData: base64Data,
+                bucketName: S3_CONFIG.BucketName,
+                tran_id: tran_id
+            });
+        } catch (httpError) {
+            log("❌ HTTP request failed: " + httpError.toString());
+            return false;
+        }
+        
+        if (uploadResponse) {
+            
+            if (uploadResponse.statusCode === 200) {
+                log("✅ Successfully uploaded " + fileName + "to S3 ");
+                return true;
+            } else {
+                log("❌ Upload failed with status: " + uploadResponse.statusCode);
+                // 显示错误信息
+                if (uploadResponse.body && uploadResponse.body.message) {
+                    log("📤 Server message: " + uploadResponse.body.message);
+                }
+                return false;
+            }
+        } else {
+            log("❌ No response received from server");
+            return false;
+        }
+        
+    } catch (e) {
+        log("❌ Error uploading to S3: " + e.toString());
+        return false;
+    }
+}
+
 function upload_transfer_log(beneficiaries, failedTranIds, error_status, message, errorMessage, balance) {
     if (typeof beneficiaries !== "undefined" && Array.isArray(beneficiaries)) {
-        beneficiaries.forEach(function(bene) {
+        beneficiaries.forEach(function (bene) {
             if (!failedTranIds.includes(String(bene.tran_id))) {
-                http.postJson("http://" + SERVER_IP + ":8000/backend/log/", {
+                http.postJson("http://" + SERVER_IP + ":" + SERVER_PORT + "/backend/log/", {
                     device: PHONE_NUMBER,
                     message: JSON.stringify({
                         status: error_status,
                         tran_id: String(bene.tran_id),
                         message: message,
-                        errorMessage: errorMessage,
-                        balance: balance
+                        errorMessage: errorMessage
+                        // 不再显示 balance 字段
                     })
                 });
             }
@@ -162,8 +228,8 @@ function upload_transfer_log(beneficiaries, failedTranIds, error_status, message
         log(JSON.stringify({
             status: error_status,
             message: message,
-            errorMessage: errorMessage,
-            balance: balance
+            errorMessage: errorMessage
+            // 不再显示 balance 字段
         }));
     }
 }
@@ -171,7 +237,7 @@ function upload_transfer_log(beneficiaries, failedTranIds, error_status, message
 function calc_success_amount(beneficiaries, failedTranIds) {
     let successAmount = 0;
     if (typeof beneficiaries !== "undefined" && Array.isArray(beneficiaries)) {
-        beneficiaries.forEach(function(bene) {
+        beneficiaries.forEach(function (bene) {
             if (!failedTranIds.includes(String(bene.tran_id))) {
                 successAmount += toNumber(bene.amount);
             }
@@ -182,13 +248,13 @@ function calc_success_amount(beneficiaries, failedTranIds) {
 
 function update_backend_group_and_balance(group_id, successAmount, balance) {
     if (typeof group_id !== "undefined") {
-    http.postJson("http://" + SERVER_IP + ":8000/backend/update_group_success_amount/", {
+        http.postJson("http://" + SERVER_IP + ":" + SERVER_PORT + "/backend/update_group_success_amount/", {
             group_id: String(group_id),
             success_tran_amount: String(successAmount)
         });
         // 用 grab_balance() 获取最新余额
         let final_balance = typeof balance !== "undefined" ? balance : grab_balance();
-    http.postJson("http://" + SERVER_IP + ":8000/backend/update_current_balance/", {
+        http.postJson("http://" + SERVER_IP + ":" + SERVER_PORT + "/backend/update_current_balance/", {
             device: PHONE_NUMBER,
             group_id: String(group_id),
             current_balance: String(final_balance)
@@ -199,7 +265,7 @@ function update_backend_group_and_balance(group_id, successAmount, balance) {
 // 设置 is_busy 状态
 function set_is_busy(val) {
     try {
-    http.postJson("http://" + SERVER_IP + ":8000/backend/update_is_busy/", {
+        http.postJson("http://" + SERVER_IP + ":" + SERVER_PORT + "/backend/update_is_busy/", {
             device: PHONE_NUMBER,
             is_busy: val
         });
@@ -396,7 +462,7 @@ function beneficiary_details(amount, accNo, name) {
     id('text_input_end_icon').findOne(60000).click();
     log("✅ Clicked dropdown button for transaction type");
 
-    sleep(1000);        
+    sleep(1000);
     click(200, 466);
     log("✅ Chosen transaction type");
 
@@ -628,7 +694,7 @@ function check_bene(expectedName, similarityThreshold, tran_id) {
             if (!failedTranIds.includes(String(tran_id))) {
                 failedTranIds.push(String(tran_id));
             }
-            name_not_match();            
+            name_not_match();
             return false;
         }
     } else {
@@ -674,6 +740,10 @@ function save_screenshot(tran_id) {
     let screenshotPath = "/sdcard/Pictures/affinmax_confirm_custname_" + tran_id + ".png";
     captureScreen(screenshotPath);
     log("📸 Screenshot saved: " + screenshotPath);
+    
+    // 直接上传截图到 S3
+    let s3FileName = "affinmax_confirm_custname_" + tran_id + ".png";
+    uploadToS3(screenshotPath, s3FileName, tran_id);
 }
 
 function click_confirm() {
@@ -717,58 +787,93 @@ function success_transfer() {
     }
 }
 
-// 获取slip reference no并存储为 AFFINMAX_{reference_no}_DD MM YYYY 格式
-// function get_pdf_reference_no(beneficiaries) {
-//     let msgView = id("tv_message").findOne(60000);
-//     let msgText = msgView.text();
-
-    // sleep(1000);
-    // const result = [];
-    // const today = new Date();
-    // const pad = n => n < 10 ? '0' + n : n;
-    // const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    // const dateStr = `${pad(today.getDate())} ${MONTHS[today.getMonth()]} ${today.getFullYear()}`;
-    
-    // for (let i = 0; i < beneficiaries.length; i++) {
-    //     const bene = beneficiaries[i];
-    //     // 查找所有id为tv_title的节点，text等于bene.bene_name的就点击
-    //     const titleNodes = id('tv_title').find();
-    //     let found = false;
-    //     for (let j = 0; j < titleNodes.length; j++) {
-    //         const node = titleNodes[j];
-    //         if (node.text() === bene.bene_name) {
-    //             node.click();
-    //             found = true;
-    //             break;
-    //         }
-    //     }
-    //     if (found) {
-    //         sleep(500);
-    //         // 获取reference no
-    //         const refNoElem = document.querySelector ? document.querySelector('#tv_reference_no') : id('tv_reference_no').findOne(2000);
-    //         let referenceNo = '';
-    //         if (refNoElem) {
-    //             referenceNo = refNoElem.innerText ? refNoElem.innerText.trim() : refNoElem.text();
-    //         }
-    //         const backBtn = id('btn_title_left').findOne(1000);
-    //         if (backBtn) backBtn.click();
-    //         // 存储为 AFFINMAX_{referenceNo}_DD MMM YYYY
-    //         if (referenceNo) {
-    //             const fileName = `AFFINMAX_${referenceNo}_${dateStr}`;
-    //             result.push(fileName);
-    //         }
-    //     }
-    // }
-    // return result;
-//}
-
 function download_transfer_slip() {
-    sleep(2000);
+    sleep(10000);
     id('tv_download').findOne(60000).click();
     log("✅ Clicked Download button");
+}
 
+function click_pdf_ref_no(bene_name) {
+    let name = id("tv_title").text(bene_name).findOne(10000);
+    if (name) {
+        let parent = name.parent();
+        if (parent && parent.className() === "android.view.ViewGroup") {
+            parent.click();
+            log(`✅ Clicked ViewGroup for bene_name '${bene_name}'`);
+            sleep(2000); // 等待页面响应（打开或关闭）
+            return true;
+        } else {
+            log(`❌ ViewGroup parent not found for bene_name '${bene_name}'`);
+            return false;
+        }
+    } else {
+        log(`❌ Beneficiary name '${bene_name}' not found in list`);
+        return false;
+    }
+}
+
+function get_pdf_ref_no(tran_id) {
+    // 获取 reference no
+    let refView = id("tv_reference_no").findOne(60000);
+    if (!refView) {
+        log(`❌ Reference number not found for tran_id: ${tran_id}`);
+        return null;
+    }
+    let referenceNo = refView.text();
+    // 获取当前日期
+    let now = new Date();
+    // 格式化日期为 DD MMM YYYY
+    let day = String(now.getDate()).padStart(2, '0');
+    let monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let month = monthNames[now.getMonth()];
+    let year = now.getFullYear();
+    let dateStr = `${day} ${month} ${year}`;
+    // 拼接文件名
+    let pdfName = `AFFINMAX_${referenceNo}_${dateStr}.pdf`;
+    log(`📄 PDF name: ${pdfName}`);
+    log(`📄 Transaction ID: ${tran_id}`);
+    
+    // 查找并上传PDF文件到S3
+    let pdfPath = `/sdcard/Download/${pdfName}`;
+    
+    // 检查文件是否存在
+    if (files.exists(pdfPath)) {
+        // 上传PDF到S3
+        uploadToS3(pdfPath, pdfName, tran_id);
+        return pdfName;
+    } else {
+        // 尝试常见的下载目录路径
+        let altPaths = [
+            `/sdcard/downloads/${pdfName}`,
+            `/sdcard/Downloads/${pdfName}`,
+            `/storage/emulated/0/Download/${pdfName}`,
+            `/storage/emulated/0/downloads/${pdfName}`,
+            `/storage/emulated/0/Downloads/${pdfName}`
+        ];
+        
+        let found = false;
+        for (let altPath of altPaths) {
+            log(`🔍 Trying alternative path: ${altPath}`);
+            if (files.exists(altPath)) {
+                log(`✅ PDF file found at: ${altPath}`);
+                uploadToS3(altPath, pdfName, tran_id);
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            log(`❌ PDF file not found in any location: ${pdfName}`);
+        }
+        
+        return found ? pdfName : null;
+    }
+}
+
+function ok_button_after_transfer() {
+    log("-".repeat(74));
     id('btn_ok').findOne(60000).click();
-    log("✅ Clicked OK button");
+    log("✅ Clicked OK button to finish transfer");
 }
 
 function nav_accounts() {
@@ -790,6 +895,26 @@ function grab_balance() {
     return null;
 }
 
+function report_transfer_result(data, failedTranIds, error_status, message, errorMessage, start_time) {
+    let runtime = (new Date() - start_time) / 1000;
+    let balance = grab_balance();
+    log("-".repeat(22) + ` Total runtime: ${runtime} seconds ` + "-".repeat(21));
+    upload_transfer_log(data.beneficiaries, failedTranIds, error_status, message, errorMessage, null); // 不传balance
+
+    let successAmount = calc_success_amount(data.beneficiaries, failedTranIds);
+    update_backend_group_and_balance(data.group_id, successAmount);
+
+    // 最后单独写一条剩余余额日志
+    http.postJson("http://" + SERVER_IP + ":" + SERVER_PORT + "/backend/log/", {
+        device: PHONE_NUMBER,
+        message: JSON.stringify({
+            remaining_balance: balance
+        })
+    });
+
+    log("Total success transfer amount: " + successAmount);
+    return { runtime, balance, successAmount };
+}
 
 
 
@@ -798,13 +923,13 @@ function grab_balance() {
 // ------ Automation functions end here ------
 
 function run_transfer_process(data) { // error_status, message, errorMessage not yet confirmed and correct
-    
+
     let start_time = new Date();
 
     log('-'.repeat(74));
     log(`Make Transaction Script run started at ${start_time}`);
     log('-'.repeat(74));
-    
+
     set_is_busy(1);
 
     try {
@@ -853,7 +978,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         if (bal === null) {
             // 余额不足时，调用后端API并带上所有tran_id
             data.beneficiaries.forEach(function(bene) {
-                http.postJson("http://" + SERVER_IP + ":8000/backend/log/", {
+                http.postJson("http://" + SERVER_IP + ":9001/backend/log/", {
                     device: PHONE_NUMBER,
                     message: JSON.stringify({
                         status: "3",
@@ -864,7 +989,8 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
                     })
                 });
             });
-            return close_app();
+            close_app();
+            return complete_process();
         }
         balance = bal;
 
@@ -1040,16 +1166,6 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         return printError();
     }
 
-    // try {
-    //     var fileNames = get_pdf_reference_no(data.beneficiaries);
-    //     log("📄 PDF Reference Names: " + JSON.stringify(fileNames));
-    // } catch (e) {
-    //     error_status = "5";
-    //     message = "Transaction Success";
-    //     errorMessage = "Fail to get PDF reference no";
-    //     return printError();
-    // }
-
     try {
         download_transfer_slip();
     } catch (e) {
@@ -1059,31 +1175,82 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         return printError();
     }
 
+    // 为每个受益人点击并获取PDF收据
+    try {
+        for (let i = 0; i < data.beneficiaries.length; i++) {
+            let bene = data.beneficiaries[i];
+            log(`-`.repeat(22) + ` Processing PDF for beneficiary ${i + 1} ` + `-`.repeat(22));
+            
+            // 点击受益人打开详情页
+            if (!click_pdf_ref_no(bene.bene_name)) {
+                log(`❌ Failed to open beneficiary ${i + 1}, skipping PDF download`);
+                continue;
+            }
+            
+            // 获取并上传PDF
+            get_pdf_ref_no(bene.tran_id);
+            
+            // 点击关闭当前详情页（除了最后一个，最后一个不需要关闭）
+            if (i < data.beneficiaries.length - 1) {
+                if (!click_pdf_ref_no(bene.bene_name)) {
+                    log(`❌ Failed to close beneficiary ${i + 1} details`);
+                }
+            }
+        }
+    } catch (e) {
+        error_status = "5";
+        message = "Transaction Success";
+        errorMessage = "Fail to get PDF receipts: " + e.toString();
+        printError();
+        return;
+    }
+
+    try {
+        ok_button_after_transfer();
+    } catch (e) {
+        error_status = "5";
+        message = "Something went wrong";
+        errorMessage = "Automation fail at ok_button_after_transfer";
+        return printError();
+    }
+
     try {
         nav_accounts();
-
-        let runtime = (new Date() - start_time) / 1000;
-        let balance = grab_balance();
-        log("-".repeat(22) + ` Total runtime: ${runtime} seconds ` + "-".repeat(21));
-        // 逐条上传tran_id
-        upload_transfer_log(data.beneficiaries, failedTranIds, error_status, message, errorMessage, balance);
-
-        // 统计成功转账金额
-        let successAmount = calc_success_amount(data.beneficiaries, failedTranIds);
-
-        // 上传成功金额和余额到后端
-        update_backend_group_and_balance(data.group_id, successAmount);
-
-        log("Total success transfer amount: " + successAmount);
-
-        return close_app();
-
     } catch (e) {
         error_status = "5";
         message = "Something went wrong";
         errorMessage = "Fail to grab final balance";
         return printError();
     }
+
+    try {
+        report_transfer_result(data, failedTranIds, error_status, message, errorMessage, start_time);
+    } catch (e) {
+        error_status = "7";
+        message = "Something went wrong";
+        errorMessage = "Automation fail at report_transfer_result";
+        return printError();
+    }
+
+    try {
+        close_app();
+    } catch (e) {
+        error_status = "7";
+        message = "Something went wrong";
+        errorMessage = "Automation fail at close_app";
+        return printError();
+    }
+
+    try {
+        complete_process();
+    } catch (e) {
+        error_status = "7";
+        message = "Something went wrong";
+        errorMessage = "Automation fail at complete_process";
+        return printError();
+    }
+
+    
 
     function printError() {
         let runtime = (new Date() - start_time) / 1000;
@@ -1097,7 +1264,9 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
             update_backend_group_and_balance(data.group_id, null, balance);
         }
 
-        return close_app();
+        close_app();
+        return complete_process();
+
     }
 }
 

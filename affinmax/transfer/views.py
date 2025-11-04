@@ -6,10 +6,13 @@ from datetime import datetime
 from django.http import JsonResponse
 from django.db.models import Max
 from django.test import RequestFactory
+from django.views.decorators.csrf import csrf_exempt
 from asgiref.sync import async_to_sync
 from .consumers import connections
 from .models import TransactionsList, MobileList, TransactionsStatus, TransactionsGroupList
 import json
+import boto3
+import base64
 from .consumers import connections
 
 
@@ -32,6 +35,7 @@ def send_task_to_device(mobile, credentials, group_obj):
 
 
 # ========== assign_pending_orders ==========
+@csrf_exempt
 @api_view(["POST"])
 def assign_pending_orders(request):
     # 查找空闲且已连接 WebSocket 的设备
@@ -108,6 +112,7 @@ def assign_pending_orders(request):
 
 # ========== update_is_busy ==========
 
+@csrf_exempt
 @api_view(["POST"])
 def update_is_busy(request):
     device = request.data.get("device")
@@ -137,6 +142,7 @@ def update_is_busy(request):
 
 # ========== update_group_success_amount ==========
 
+@csrf_exempt
 @api_view(["POST"])
 def update_group_success_amount(request):
     group_id = request.data.get("group_id")
@@ -155,6 +161,7 @@ def update_group_success_amount(request):
 # ========== update_current_balance ==========
 
 
+@csrf_exempt
 @api_view(["POST"])
 def update_current_balance(request):
     device = request.data.get("device")
@@ -206,6 +213,7 @@ def update_current_balance(request):
     responses={200: "TransactionStatus created"},
 )
 
+@csrf_exempt
 @api_view(["POST"])
 def add_transaction_status(request):
     status_name = request.data.get("status_name")
@@ -214,6 +222,7 @@ def add_transaction_status(request):
     obj, created = TransactionsStatus.objects.get_or_create(status_name=status_name)
     return Response({"id": obj.id, "status_name": obj.status_name, "created": created})
 
+@csrf_exempt
 @api_view(["POST"])
 def log(request):
     import os
@@ -278,6 +287,7 @@ def log(request):
     ),
     responses={200: "Mobile created"},
 )
+@csrf_exempt
 @api_view(["POST"])
 def create_mobile(request):
     data = request.data
@@ -328,6 +338,7 @@ credentials_map = {}
     ),
     responses={200: "Trigger set"},
 )
+@csrf_exempt
 @api_view(["POST"])
 def trigger(request):
     data = request.data
@@ -390,5 +401,132 @@ def trigger(request):
         "status": "triggered",
         "assign_result": assign_data
     })
+
+
+# ========== upload_s3 ==========
+@csrf_exempt
+@swagger_auto_schema(
+    method="post",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "device": openapi.Schema(type=openapi.TYPE_STRING),
+            "fileName": openapi.Schema(type=openapi.TYPE_STRING),
+            "fileData": openapi.Schema(type=openapi.TYPE_STRING, description="Base64 encoded file data"),
+            "bucketName": openapi.Schema(type=openapi.TYPE_STRING),
+            "tran_id": openapi.Schema(type=openapi.TYPE_STRING),
+        },
+        required=["device", "fileName", "fileData", "bucketName", "tran_id"],
+    ),
+    responses={200: "File uploaded to S3 successfully"},
+)
+@csrf_exempt
+@api_view(["POST"])
+def upload_s3(request):
+    """上传文件到 AWS S3"""
+    try:
+        data = request.data
+        device = data.get("device")
+        file_name = data.get("fileName")
+        file_data = data.get("fileData")
+        bucket_name = data.get("bucketName")
+        tran_id = data.get("tran_id")
+        
+        if not all([device, file_name, file_data, bucket_name, tran_id]):
+            missing = []
+            if not device: missing.append("device")
+            if not file_name: missing.append("fileName")
+            if not file_data: missing.append("fileData")
+            if not bucket_name: missing.append("bucketName")
+            if not tran_id: missing.append("tran_id")
+            return Response({"error": f"Missing required fields: {missing}"}, status=400)
+        
+        # AWS S3 配置 - 从环境变量读取
+        import os
+        S3_CONFIG = {
+            "AccessKey": os.environ.get("AWS_ACCESS_KEY_ID", ""),
+            "SecretKey": os.environ.get("AWS_SECRET_ACCESS_KEY", ""),
+            "Region": os.environ.get("AWS_DEFAULT_REGION", "ap-southeast-1")
+        }
+        
+        # 验证密钥是否存在
+        if not S3_CONFIG["AccessKey"] or not S3_CONFIG["SecretKey"]:
+            return Response({"error": "AWS credentials not configured"}, status=500)
+        
+        # 创建 S3 客户端
+        try:
+            import boto3
+            s3_client = boto3.client(
+                's3',
+                aws_access_key_id=S3_CONFIG["AccessKey"],
+                aws_secret_access_key=S3_CONFIG["SecretKey"],
+                region_name=S3_CONFIG["Region"]
+            )
+        except ImportError as import_error:
+            return Response({
+                "status": "error",
+                "message": f"boto3 not available: {import_error}"
+            }, status=500)
+        except Exception as client_error:
+            return Response({
+                "status": "error",
+                "message": f"S3 client creation failed: {client_error}"
+            }, status=500)
+        
+        # 解码 base64 数据
+        try:
+            file_content = base64.b64decode(file_data)
+        except Exception as decode_error:
+            return Response({
+                "status": "error",
+                "message": f"Base64 decode failed: {str(decode_error)}"
+            }, status=400)
+        
+        # 构建 S3 对象键（文件路径）- 统一存储在 Affinmax/{device}/{tran_id}/ 下
+        if file_name.lower().endswith('.pdf'):
+            s3_key = f"Affinmax/{device}/{tran_id}/{file_name}"
+            content_type = 'application/pdf'
+        else:
+            s3_key = f"Affinmax/{device}/{tran_id}/{file_name}"
+            content_type = 'image/png'
+        
+        # 上传到 S3
+        try:
+            s3_client.put_object(
+                Bucket=bucket_name,
+                Key=s3_key,
+                Body=file_content,
+                ContentType=content_type,
+                Metadata={
+                    'device': device,
+                    'upload_time': datetime.now().isoformat()
+                }
+            )
+        except Exception as s3_error:
+            return Response({
+                "status": "error",
+                "message": f"S3 upload failed: {str(s3_error)}"
+            }, status=500)
+        
+        # 生成 S3 URL
+        s3_url = f"https://{bucket_name}.s3.{S3_CONFIG['Region']}.amazonaws.com/{s3_key}"
+        
+        return Response({
+            "status": "success",
+            "message": "File uploaded successfully",
+            "s3_url": s3_url,
+            "s3_key": s3_key
+        })
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"[upload_s3] Error: {str(e)}")
+        print(f"[upload_s3] Traceback: {error_details}")
+        return Response({
+            "status": "error",
+            "message": f"Upload failed: {str(e)}",
+            "traceback": error_details
+        }, status=500)
 
 
