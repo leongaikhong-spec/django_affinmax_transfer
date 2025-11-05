@@ -687,8 +687,8 @@ function check_bene(expectedName, similarityThreshold, tran_id) {
             log(JSON.stringify({
                 status: 4,
                 tran_id: tran_id,
-                message: "Name similarity below threshold.",
-                errorMessage: `Expected: ${expectedName}, Actual: ${actualName}`
+                message: "Name similarity below threshold. The similarity threshold is " + (similarityThreshold * 100) + "%.",
+                errorMessage: `Expected: ${expectedName}, Actual: ${actualName}, Similarity Threshold: ${similarityThreshold * 100}%`
             }));
             // 记录已上传 status 的 tran_id
             if (!failedTranIds.includes(String(tran_id))) {
@@ -974,9 +974,24 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     }
 
     try {
-        let bal = check_balance(data.beneficiaries);
-        if (bal === null) {
-            // 余额不足时，调用后端API并带上所有tran_id
+        let balanceCheckResult = check_balance(data.beneficiaries);
+        if (balanceCheckResult === null) {
+            // 余额不足 - 获取当前余额和所需金额
+            let currentBalance = "N/A";
+            let totalAmount = 0;
+            
+            // 计算总金额
+            data.beneficiaries.forEach(function(bene) {
+                totalAmount += toNumber(bene.amount);
+            });
+            
+            // 尝试获取当前余额
+            let balanceTextView = id("tv_total_available_balance").findOne(3000);
+            if (balanceTextView) {
+                currentBalance = balanceTextView.text();
+            }
+            
+            // 余额不足时，调用后端API并带上所有tran_id以及余额信息
             data.beneficiaries.forEach(function(bene) {
                 http.postJson("http://" + SERVER_IP + ":9001/backend/log/", {
                     device: PHONE_NUMBER,
@@ -985,6 +1000,8 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
                         tran_id: String(bene.tran_id),
                         message: "Insufficient balance",
                         errorMessage: "Balance less than transfer amount",
+                        current_balance: currentBalance,
+                        required_amount: totalAmount.toFixed(2),
                         balance: null
                     })
                 });
@@ -992,7 +1009,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
             close_app();
             return complete_process();
         }
-        balance = bal;
+        balance = balanceCheckResult;
 
         // ...existing code...
     } catch (e) {
@@ -1171,7 +1188,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     } catch (e) {
         error_status = "5";
         message = "Transaction Success";
-        errorMessage = "Fail to download slip";
+        errorMessage = "Automation fail at download_transfer_slip";
         return printError();
     }
 
@@ -1200,7 +1217,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     } catch (e) {
         error_status = "5";
         message = "Transaction Success";
-        errorMessage = "Fail to get PDF receipts: " + e.toString();
+        errorMessage = "Automation fail at get PDF receipts: " + e.toString();
         printError();
         return;
     }
@@ -1219,7 +1236,7 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
     } catch (e) {
         error_status = "5";
         message = "Something went wrong";
-        errorMessage = "Fail to grab final balance";
+        errorMessage = "Automation fail at nav_accounts";
         return printError();
     }
 

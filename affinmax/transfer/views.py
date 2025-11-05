@@ -38,6 +38,9 @@ def send_task_to_device(mobile, credentials, group_obj):
 @csrf_exempt
 @api_view(["POST"])
 def assign_pending_orders(request):
+    # 获取 similarityThreshold 参数（如果有的话）
+    similarity_threshold = request.data.get("similarityThreshold", 0.7)  # 默认 0.7
+    
     # 查找空闲且已连接 WebSocket 的设备
     from .consumers import connections
     mobiles = MobileList.objects.filter(is_online=True, is_busy=False, is_activated=True)
@@ -97,7 +100,7 @@ def assign_pending_orders(request):
         "user_id": mobile.user_id,
         "password": mobile.password,
         "tranPass": mobile.tran_pass,
-        "similarityThreshold": None,
+        "similarityThreshold": similarity_threshold,  # ✅ 使用传递的参数
         "beneficiaries": beneficiaries,
         "log_file": mobile.log_file,
         "device": mobile.device,
@@ -266,15 +269,42 @@ def log(request):
                 # 发送 Telegram 通知 - 只在出错时发送（status != "2"）
                 # status = "2" 表示成功，其他状态表示错误
                 if str(status) != "2":
-                    # 自动停用设备 (is_activated = 0)
-                    try:
-                        mobile = MobileList.objects.get(device=device_number)
-                        mobile.is_activated = False
-                        mobile.save()
-                    except MobileList.DoesNotExist:
-                        print(f"⚠️ Device {device_number} config not found for deactivation")
-                    except Exception as e:
-                        print(f"❌ Failed to deactivate device: {e}")
+                    # 检查是否是不需要停用设备的错误类型
+                    error_lower = error_message.lower() if error_message else ""
+                    
+                    # 不需要停用设备的错误类型:
+                    # 1. 无效的银行或账号
+                    is_invalid_bank_account = 'invalid bank or account number' in error_lower
+                    # 2. 名字不匹配（包含 Expected 和 Actual）
+                    is_name_mismatch = ('expected' in error_lower and 'actual' in error_lower)
+                    
+                    # 只有在非特殊错误类型时才自动停用设备
+                    should_deactivate = not (is_invalid_bank_account or is_name_mismatch)
+                    
+                    if should_deactivate:
+                        try:
+                            mobile = MobileList.objects.get(device=device_number)
+                            mobile.is_activated = False
+                            mobile.save()
+                        except MobileList.DoesNotExist:
+                            print(f"⚠️ Device {device_number} config not found for deactivation")
+                        except Exception as e:
+                            print(f"❌ Failed to deactivate device: {e}")
+
+                    # 获取 group_id（如果存在）
+                    group_id = obj.group.id if obj.group else 'N/A'
+                    
+                    # 获取余额信息（从日志或数据库）
+                    current_balance = msg_json.get('current_balance') or msg_json.get('remaining_balance', 'N/A')
+                    required_amount = msg_json.get('required_amount') or msg_json.get('total_amount', 'N/A')
+                    
+                    # 如果日志中没有，尝试从数据库获取
+                    if current_balance == 'N/A':
+                        try:
+                            mobile = MobileList.objects.get(device=device_number)
+                            current_balance = mobile.current_balance or 'N/A'
+                        except:
+                            pass
 
                     # 发送错误通知（带按钮）
                     telegram_notifier.send_error_notification(
@@ -282,35 +312,17 @@ def log(request):
                         error_data={
                             'status': status,
                             'tran_id': tran_id,
+                            'group_id': str(group_id),
+                            'current_balance': str(current_balance),
+                            'required_amount': str(required_amount),
                             'message': message_text or error_message,
                             'errorMessage': error_message
                         }
                     )
-        
-        # 检测余额不足的日志
-        if 'Insufficient balance' in msg or 'insufficient balance' in msg.lower():
-            # 尝试解析余额信息
-            try:
-                balance_match = msg_json.get('remaining_balance') or msg_json.get('current_balance')
-                if balance_match:
-                    telegram_notifier.send_insufficient_balance_notification(
-                        device=device_number,
-                        current_balance=balance_match,
-                        required_amount="N/A"
-                    )
-            except Exception:
-                pass
                 
     except json.JSONDecodeError:
-        # 非 JSON 格式的日志，检查是否包含错误关键词
-        error_keywords = ['❌', 'error', 'fail', 'exception', 'catch', 'Something went wrong']
-        if any(keyword.lower() in msg.lower() for keyword in error_keywords):
-            # 发送简单的错误通知
-            telegram_notifier.send_automation_error(
-                device=device_number,
-                error_stage="Unknown",
-                error_details=msg[:500]  # 限制消息长度
-            )
+        # 非 JSON 格式的日志，跳过 Telegram 通知
+        pass
     except Exception as e:
         # 非结构化日志或解析失败，跳过
         print(f"[log] Error processing message: {e}")
@@ -442,10 +454,14 @@ def trigger(request):
     }
     pn = mobile.device
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    # 自动调用 assign_pending_orders 派单
+    # 自动调用 assign_pending_orders 派单，并传递 similarityThreshold
     from django.test import RequestFactory
     factory = RequestFactory()
-    assign_request = factory.post('/backend/assign_pending_orders/')
+    assign_request = factory.post(
+        '/backend/assign_pending_orders/',
+        data={"similarityThreshold": data.get("similarityThreshold", 0.7)},  # ✅ 传递参数
+        content_type='application/json'
+    )
     assign_response = assign_pending_orders(assign_request)
     try:
         assign_data = assign_response.data
@@ -583,132 +599,3 @@ def upload_s3(request):
             "traceback": error_details
         }, status=500)
 
-
-# ========== telegram_webhook ==========
-@csrf_exempt
-@api_view(["POST"])
-def telegram_webhook(request):
-    """
-    处理 Telegram Bot 的 webhook 回调
-    用于处理 Activate/Deactivate 按钮点击事件
-    """
-    try:
-        data = request.data
-        print(f"[telegram_webhook] Received data: {json.dumps(data, indent=2)}")
-        
-        # 检查是否是 callback_query（按钮点击）
-        if 'callback_query' not in data:
-            return Response({"status": "ok", "message": "Not a callback query"})
-        
-        callback_query = data['callback_query']
-        callback_data = callback_query.get('data', '')
-        callback_id = callback_query.get('id', '')
-        message = callback_query.get('message', {})
-        chat_id = message.get('chat', {}).get('id')
-        message_id = message.get('message_id')
-        
-        # 解析 callback_data: "activate_0123456789" 或 "deactivate_0123456789"
-        parts = callback_data.split('_', 1)
-        if len(parts) != 2:
-            return Response({"status": "error", "message": "Invalid callback data"}, status=400)
-        
-        action = parts[0]  # "activate" 或 "deactivate"
-        device = parts[1]   # 设备号码
-        
-        # 查找设备
-        try:
-            mobile = MobileList.objects.get(device=device)
-        except MobileList.DoesNotExist:
-            # 回复用户
-            answer_callback_query(callback_id, f"❌ 设备 {device} 未找到")
-            return Response({"status": "error", "message": "Device not found"}, status=404)
-        
-        # 执行操作
-        if action == "activate":
-            mobile.is_activated = True
-            mobile.save()
-            response_text = f"✅ 设备 {device} 已激活\n\n设备现在可以接收新的交易任务。"
-            answer_text = "✅ 设备已激活"
-        elif action == "deactivate":
-            mobile.is_activated = False
-            mobile.save()
-            response_text = f"❌ 设备 {device} 已停用\n\n设备将不会接收新的交易任务。"
-            answer_text = "❌ 设备已停用"
-        else:
-            answer_callback_query(callback_id, "❌ 无效的操作")
-            return Response({"status": "error", "message": "Invalid action"}, status=400)
-        
-        # 回复 callback query（移除 "加载中..." 提示）
-        answer_callback_query(callback_id, answer_text)
-        
-        # 编辑原消息，添加操作结果
-        edit_message_text(chat_id, message_id, response_text)
-        
-        return Response({
-            "status": "success",
-            "action": action,
-            "device": device,
-            "is_activated": mobile.is_activated
-        })
-        
-    except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        print(f"[telegram_webhook] Error: {str(e)}")
-        print(f"[telegram_webhook] Traceback: {error_details}")
-        return Response({
-            "status": "error",
-            "message": str(e),
-            "traceback": error_details
-        }, status=500)
-
-
-def answer_callback_query(callback_query_id, text):
-    """回复 callback query（显示提示消息）"""
-    from django.conf import settings
-    import requests
-    
-    bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
-    if not bot_token:
-        return False
-    
-    url = f"https://api.telegram.org/bot{bot_token}/answerCallbackQuery"
-    payload = {
-        'callback_query_id': callback_query_id,
-        'text': text,
-        'show_alert': False
-    }
-    
-    try:
-        response = requests.post(url, json=payload, timeout=10)
-        response.raise_for_status()
-        return True
-    except Exception as e:
-        print(f"❌ answer_callback_query failed: {e}")
-        return False
-
-
-def edit_message_text(chat_id, message_id, new_text):
-    """编辑消息内容"""
-    from django.conf import settings
-    import requests
-    
-    bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
-    if not bot_token:
-        return False
-    
-    url = f"https://api.telegram.org/bot{bot_token}/editMessageText"
-    payload = {
-        'chat_id': chat_id,
-        'message_id': message_id,
-        'text': new_text,
-        'parse_mode': 'HTML'
-    }
-    
-    try:
-        response = requests.post(url, json=payload, timeout=10)
-        response.raise_for_status()
-        return True
-    except Exception as e:
-        print(f"❌ edit_message_text failed: {e}")
-        return False
