@@ -13,4 +13,5 @@ urlpatterns = [
     path('backend/update_is_busy/', views.update_is_busy, name="Update Is Busy"),
     path('backend/assign_pending_orders/', views.assign_pending_orders, name="Assign Pending Orders"),
     path('backend/upload_s3/', views.upload_s3, name="Upload to S3"),
+    path('backend/test_telegram/', views.test_telegram, name="Test Telegram"),
 ]

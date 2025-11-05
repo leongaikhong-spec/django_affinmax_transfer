@@ -22,6 +22,7 @@ class TelegramNotifier:
     def __init__(self):
         self.bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
         self.chat_id = getattr(settings, 'TELEGRAM_CHAT_ID', None)
+        self.topic_id = getattr(settings, 'TELEGRAM_TOPIC_ID', None)  # Topic ID（可选）
         self.enabled = bool(self.bot_token and self.chat_id)
         self.last_update_id = 0
         self.polling_thread = None
@@ -31,6 +32,8 @@ class TelegramNotifier:
             print("⚠️ Telegram notifications disabled: Please configure TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID")
         else:
             print(f"[Telegram] Initialized (Polling Mode) - Chat ID: {self.chat_id}")
+            if self.topic_id:
+                print(f"[Telegram] Topic ID: {self.topic_id}")
             print(f"[Telegram] Ready to handle button clicks via polling")
     
     def send_message(self, message, parse_mode='HTML', reply_markup=None):
@@ -56,6 +59,10 @@ class TelegramNotifier:
             'text': message,
             'parse_mode': parse_mode
         }
+        
+        # 添加 Topic ID（如果配置了）
+        if self.topic_id:
+            payload['message_thread_id'] = int(self.topic_id)
         
         # 添加按钮
         if reply_markup:

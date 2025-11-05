@@ -599,3 +599,130 @@ def upload_s3(request):
             "traceback": error_details
         }, status=500)
 
+
+# ========== test_telegram ==========
+@swagger_auto_schema(
+    method="post",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "message_type": openapi.Schema(
+                type=openapi.TYPE_STRING, 
+                description="消息类型: simple (简单消息), error (错误通知), balance (余额不足), invalid_bank (无效银行), name_mismatch (名字不匹配)",
+                enum=["simple", "error", "balance", "invalid_bank", "name_mismatch"]
+            ),
+            "device": openapi.Schema(type=openapi.TYPE_STRING, description="设备号码"),
+            "test_message": openapi.Schema(type=openapi.TYPE_STRING, description="自定义测试消息（用于 simple 类型）"),
+        },
+    ),
+    responses={
+        200: "Telegram message sent successfully",
+        500: "Failed to send message"
+    },
+)
+@csrf_exempt
+@api_view(["POST"])
+def test_telegram(request):
+    """测试 Telegram 发送消息功能"""
+    from .telegram_bot import telegram_notifier
+    
+    message_type = request.data.get("message_type", "simple")
+    device = request.data.get("device", "0123456789")
+    test_message = request.data.get("test_message", "")
+    
+    try:
+        if message_type == "simple":
+            # 发送简单消息
+            msg = test_message or f"""
+🧪 <b>Telegram 测试消息</b>
+
+<b>测试时间:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+<b>设备号码:</b> {device}
+<b>消息类型:</b> 简单测试消息
+
+✅ 如果你看到这条消息，说明 Telegram 配置成功！
+"""
+            success = telegram_notifier.send_message(msg)
+            
+        elif message_type == "error":
+            # 发送通用错误通知（带按钮）
+            error_data = {
+                'status': '3',
+                'tran_id': 'TEST_001',
+                'group_id': '999',
+                'current_balance': '50000.00',
+                'required_amount': '60000.00',
+                'message': 'Test error message',
+                'errorMessage': 'This is a test error for debugging'
+            }
+            success = telegram_notifier.send_error_notification(device, error_data)
+            
+        elif message_type == "balance":
+            # 发送余额不足错误
+            error_data = {
+                'status': '3',
+                'tran_id': 'TEST_002',
+                'group_id': '998',
+                'current_balance': '1000.00',
+                'required_amount': '5000.00',
+                'message': 'Insufficient balance',
+                'errorMessage': 'Balance less than transfer amount. Current: 1000.00, Required: 5000.00'
+            }
+            success = telegram_notifier.send_error_notification(device, error_data)
+            
+        elif message_type == "invalid_bank":
+            # 发送无效银行账号错误
+            error_data = {
+                'status': '3',
+                'tran_id': 'TEST_003',
+                'group_id': '997',
+                'current_balance': '50000.00',
+                'required_amount': '1000.00',
+                'message': 'Invalid bank account',
+                'errorMessage': 'Invalid bank or account number: 1234567890'
+            }
+            success = telegram_notifier.send_error_notification(device, error_data)
+            
+        elif message_type == "name_mismatch":
+            # 发送名字不匹配错误
+            error_data = {
+                'status': '3',
+                'tran_id': 'TEST_004',
+                'group_id': '996',
+                'current_balance': '50000.00',
+                'required_amount': '1000.00',
+                'message': 'Name mismatch',
+                'errorMessage': 'Name verification failed. Expected: JOHN DOE, Actual: JANE DOE'
+            }
+            success = telegram_notifier.send_error_notification(device, error_data)
+            
+        else:
+            return Response({
+                "error": f"Unknown message_type: {message_type}",
+                "available_types": ["simple", "error", "balance", "invalid_bank", "name_mismatch"]
+            }, status=400)
+        
+        if success:
+            return Response({
+                "status": "success",
+                "message": f"Telegram {message_type} message sent successfully",
+                "chat_id": telegram_notifier.chat_id,
+                "topic_id": getattr(telegram_notifier, 'topic_id', None),
+                "device": device,
+                "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+        else:
+            return Response({
+                "status": "failed",
+                "message": "Failed to send Telegram message",
+                "enabled": telegram_notifier.enabled
+            }, status=500)
+            
+    except Exception as e:
+        import traceback
+        return Response({
+            "status": "error",
+            "message": f"Exception occurred: {str(e)}",
+            "traceback": traceback.format_exc()
+        }, status=500)
+
