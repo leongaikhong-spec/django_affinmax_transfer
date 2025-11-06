@@ -456,6 +456,8 @@ function beneficiary_details(amount, accNo, name) {
         return;
     }
 
+    sleep(1000);
+
     id('rb_open_bene').click();
     log("✅ Chosen beneficiary type");
 
@@ -758,6 +760,7 @@ function preview_button() {
 }
 
 function confirm_transfer() {
+    sleep(1000);
     id('checkbox').findOne(60000).click();
     log("✅ Clicked t&c checkbox");
 

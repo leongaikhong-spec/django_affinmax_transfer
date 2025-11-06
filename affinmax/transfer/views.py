@@ -608,11 +608,11 @@ def upload_s3(request):
         properties={
             "message_type": openapi.Schema(
                 type=openapi.TYPE_STRING, 
-                description="消息类型: simple (简单消息), error (错误通知), balance (余额不足), invalid_bank (无效银行), name_mismatch (名字不匹配)",
+                description="error message type",
                 enum=["simple", "error", "balance", "invalid_bank", "name_mismatch"]
             ),
-            "device": openapi.Schema(type=openapi.TYPE_STRING, description="设备号码"),
-            "test_message": openapi.Schema(type=openapi.TYPE_STRING, description="自定义测试消息（用于 simple 类型）"),
+            "device": openapi.Schema(type=openapi.TYPE_STRING, description="device number"),
+            "test_message": openapi.Schema(type=openapi.TYPE_STRING, description="custom test message (for simple type)"),
         },
     ),
     responses={
@@ -623,7 +623,7 @@ def upload_s3(request):
 @csrf_exempt
 @api_view(["POST"])
 def test_telegram(request):
-    """测试 Telegram 发送消息功能"""
+    """Error message type: simple, error, balance, invalid_bank, name_mismatch"""
     from .telegram_bot import telegram_notifier
     
     message_type = request.data.get("message_type", "simple")

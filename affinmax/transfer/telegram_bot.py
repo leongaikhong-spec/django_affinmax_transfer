@@ -293,13 +293,13 @@ class TelegramNotifier:
         if action == "activate":
             mobile.is_activated = True
             mobile.save()
-            new_message = f"✅ <b>Device {device} activated</b>\n👤 <b>Activated by:</b> {user_display}\n⏰ <b>Time:</b> {self._get_current_time()}"
+            new_message = f"✅ <b>{user_display} activate device {device}</b>"
             answer_text = f"✅ Device {device} activated"
             print(f"✅ Device {device} activated by {user_display}")
         elif action == "deactivate":
             mobile.is_activated = False
             mobile.save()
-            new_message = f"❌ <b>Device {device} deactivated</b>\n👤 <b>Deactivated by:</b> {user_display}\n⏰ <b>Time:</b> {self._get_current_time()}"
+            new_message = f"❌ <b>{user_display} deactivate device {device}</b>"
             answer_text = f"❌ Device {device} deactivated"
             print(f"❌ Device {device} deactivated by {user_display}")
         else:
