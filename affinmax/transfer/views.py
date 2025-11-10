@@ -225,6 +225,7 @@ def add_transaction_status(request):
     obj, created = TransactionsStatus.objects.get_or_create(status_name=status_name)
     return Response({"id": obj.id, "status_name": obj.status_name, "created": created})
 
+
 @csrf_exempt
 @api_view(["POST"])
 def log(request):

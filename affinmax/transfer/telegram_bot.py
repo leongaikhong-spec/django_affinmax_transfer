@@ -31,10 +31,8 @@ class TelegramNotifier:
         if not self.enabled:
             print("⚠️ Telegram notifications disabled: Please configure TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID")
         else:
-            print(f"[Telegram] Initialized (Polling Mode) - Chat ID: {self.chat_id}")
             if self.topic_id:
                 print(f"[Telegram] Topic ID: {self.topic_id}")
-            print(f"[Telegram] Ready to handle button clicks via polling")
     
     def send_message(self, message, parse_mode='HTML', reply_markup=None):
         """
@@ -326,7 +324,6 @@ class TelegramNotifier:
         self.polling_active = True
         self.polling_thread = threading.Thread(target=self._polling_loop, daemon=True)
         self.polling_thread.start()
-        print("✅ Telegram polling started in background thread")
     
     def stop_polling(self):
         """停止轮询"""
@@ -336,14 +333,6 @@ class TelegramNotifier:
         print("✅ Telegram polling stopped")
     
     def _polling_loop(self):
-        """轮询主循环（内部方法）"""
-        print("=" * 60)
-        print("🤖 Telegram Bot Polling Mode Started")
-        print("=" * 60)
-        print(f"Bot Token: {self.bot_token[:10]}...{self.bot_token[-10:]}")
-        print(f"Chat ID: {self.chat_id}")
-        print("=" * 60)
-        print("\n✅ Listening for button clicks...\n")
         
         while self.polling_active:
             try:

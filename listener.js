@@ -2,7 +2,7 @@
 "ui";
 
 
-const SERVER_IP = "18.142.225.168";  // 你的服务器IP
+const SERVER_IP = "47.130.115.16";  // 你的服务器IP
 const SERVER_PORT = "9001";           // 你的服务器端口
 const PHONE_NUMBER = "0123456789";    // 你的设备号码
 
@@ -43,6 +43,11 @@ function connectWebSocket(onMessageCallback) {
                 ws.send(JSON.stringify({type: "ping", device: PHONE_NUMBER}));
             }
         }, 5000); // 每 5 秒心跳
+        // 如果有未派单数据，自动派单
+        if (pendingData) {
+            sendTransfer(pendingData);
+            pendingData = null;
+        }
     });
     ws.on("close", () => {
         isConnected = false;

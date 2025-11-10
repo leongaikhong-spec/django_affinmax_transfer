@@ -1,7 +1,7 @@
 "auto";
 "ui";
 
-const SERVER_IP = "18.142.225.168";  // Device IP Address
+const SERVER_IP = "147.130.115.16";  // Device IP Address
 const SERVER_PORT = "9001";           // 你的服务器端口
 const PHONE_NUMBER = "0123456789";    // Current device phone number
 
