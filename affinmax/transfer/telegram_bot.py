@@ -291,15 +291,82 @@ class TelegramNotifier:
         if action == "activate":
             mobile.is_activated = True
             mobile.save()
-            new_message = f"✅ <b>{user_display} activate device {device}</b>"
-            answer_text = f"✅ Device {device} activated"
             print(f"✅ Device {device} activated by {user_display}")
+            
+            # 检查是否符合接单条件（只检查数据库状态）
+            is_online = getattr(mobile, "is_online", False)
+            is_activated = getattr(mobile, "is_activated", False)
+            is_busy = getattr(mobile, "is_busy", True)
+            is_eligible = is_online and is_activated and not is_busy
+            
+            print(f"📊 Device status: is_online={is_online}, is_activated={is_activated}, is_busy={is_busy}")
+            print(f"🔍 Eligible: {is_eligible}")
+            
+            if not is_eligible:
+                # ❌ 设备不符合条件 - 显示详细状态
+                print(f"⚠️ Device NOT eligible for orders")
+                
+                # 构建状态显示
+                status_icon_online = "🟢" if is_online else "🔴"
+                status_text_online = "✅ Online" if is_online else "❌ Offline"
+                
+                status_icon_activated = "🟢" if is_activated else "🔴"
+                status_text_activated = "✅ Activated" if is_activated else "❌ Deactivated"
+                
+                status_icon_busy = "🟢" if not is_busy else "🔴"
+                status_text_busy = "✅ Not Busy" if not is_busy else "❌ Busy"
+                
+                new_message = f"""✅ <b>{user_display} activated device {device}</b>
+
+⚠️ <b>Device NOT eligible for orders</b>
+
+📊 <b>Current Status:</b>
+  {status_icon_online} <b>is_online:</b> {is_online} {status_text_online}
+  {status_icon_activated} <b>is_activated:</b> {is_activated} {status_text_activated}
+  {status_icon_busy} <b>is_busy:</b> {is_busy} {status_text_busy}
+
+💡 <b>Required for orders:</b>
+  • is_online = True
+  • is_activated = True
+  • is_busy = False"""
+                
+                answer_text = f"⚠️ Device {device} activated but not eligible"
+                
+            else:
+                # ✅ 设备符合条件 - 只显示符合资格
+                print(f"✅ Device is eligible")
+                
+                # 调用 assign_pending_orders（但不显示派单详情）
+                try:
+                    from .views import assign_pending_orders
+                    from django.test import RequestFactory
+                    
+                    factory = RequestFactory()
+                    assign_request = factory.post('/backend/assign_pending_orders/')
+                    assign_response = assign_pending_orders(assign_request)
+                    
+                    print(f"✅ assign_pending_orders called, status: {assign_response.status_code}")
+                    
+                except Exception as e:
+                    print(f"❌ Error calling assign_pending_orders: {e}")
+                    import traceback
+                    traceback.print_exc()
+                
+                # 只显示设备符合资格的消息
+                new_message = f"""✅ <b>{user_display} activated device {device}</b>
+
+📊 <b>Status:</b> Device is eligible ✅"""
+                
+                answer_text = f"✅ Device {device} activated"
+            
         elif action == "deactivate":
             mobile.is_activated = False
             mobile.save()
-            new_message = f"❌ <b>{user_display} deactivate device {device}</b>"
+            
+            new_message = f"❌ <b>{user_display} deactivated device {device}</b>"
             answer_text = f"❌ Device {device} deactivated"
             print(f"❌ Device {device} deactivated by {user_display}")
+            
         else:
             print(f"❌ Invalid action: {action}")
             self.answer_callback_query(callback_id, "❌ Invalid operation")
