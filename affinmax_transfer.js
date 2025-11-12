@@ -950,6 +950,36 @@ function click_pdf_ref_no(bene_name) {
     }
 }
 
+function click_pdf_ref_no_by_index(index) {
+    // 获取所有受益人名称元素
+    let nameElements = id("tv_title").find();
+
+    if (!nameElements || nameElements.length === 0) {
+        log(`❌ No beneficiary names found in list`);
+        return false;
+    }
+
+    // 直接使用传入的index（从1开始，跳过index 0）
+    if (index < 0 || index >= nameElements.length) {
+        log(`❌ Index ${index} out of bounds, only ${nameElements.length} elements found`);
+        return false;
+    }
+
+    // 点击指定索引的受益人
+    let targetName = nameElements[index];
+    let parent = targetName.parent();
+
+    if (parent && parent.className() === "android.view.ViewGroup") {
+        parent.click();
+        log(`✅ Clicked beneficiary at index ${index} (name: '${targetName.text()}')`);
+        sleep(2000); // 等待页面响应（打开或关闭）
+        return true;
+    } else {
+        log(`❌ ViewGroup parent not found for beneficiary at index ${index}`);
+        return false;
+    }
+}
+
 function get_pdf_ref_no(tran_id) {
     // 获取 reference no
     let refView = id("tv_reference_no").findOne(60000);
@@ -1377,23 +1407,39 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
 
     // 为每个受益人点击并获取PDF收据
     try {
+        // 只处理成功的受益人（不在 failedTranIds 中）
+        let successfulBeneficiaries = [];
         for (let i = 0; i < data.beneficiaries.length; i++) {
             let bene = data.beneficiaries[i];
-            log(`-`.repeat(22) + ` Processing PDF for beneficiary ${i + 1} ` + `-`.repeat(22));
-            
-            // 点击受益人打开详情页
-            if (!click_pdf_ref_no(bene.bene_name)) {
-                log(`❌ Failed to open beneficiary ${i + 1}, skipping PDF download`);
+            if (!failedTranIds.includes(String(bene.tran_id))) {
+                successfulBeneficiaries.push({
+                    originalIndex: i,
+                    listIndex: successfulBeneficiaries.length,  // 在列表中的实际位置
+                    bene: bene
+                });
+            }
+        }
+        
+        log(`📋 Processing ${successfulBeneficiaries.length} successful transactions for PDF download`);
+        
+        for (let i = 1; i <= successfulBeneficiaries.length; i++) {
+            let item = successfulBeneficiaries[i - 1];
+            let bene = item.bene;
+            log(`-`.repeat(22) + ` Processing PDF for beneficiary ${item.originalIndex + 1} (list position ${i}) ` + `-`.repeat(22));
+
+            // 使用1-based索引点击受益人打开详情页
+            if (!click_pdf_ref_no_by_index(i)) {
+                log(`❌ Failed to open beneficiary at index ${i}, skipping PDF download`);
                 continue;
             }
-            
+
             // 获取并上传PDF
             get_pdf_ref_no(bene.tran_id);
-            
+
             // 点击关闭当前详情页（除了最后一个，最后一个不需要关闭）
-            if (i < data.beneficiaries.length - 1) {
-                if (!click_pdf_ref_no(bene.bene_name)) {
-                    log(`❌ Failed to close beneficiary ${i + 1} details`);
+            if (i < successfulBeneficiaries.length) {
+                if (!click_pdf_ref_no_by_index(i)) {
+                    log(`❌ Failed to close beneficiary at index ${i} details`);
                 }
             }
         }
