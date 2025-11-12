@@ -44,10 +44,6 @@ function connectWebSocket(onMessageCallback) {
             }
         }, 5000); // 每 5 秒心跳
         // 如果有未派单数据，自动派单
-        if (pendingData) {
-            sendTransfer(pendingData);
-            pendingData = null;
-        }
     });
     ws.on("close", () => {
         isConnected = false;

@@ -7,15 +7,75 @@ from django.http import JsonResponse
 from django.db.models import Max
 from django.test import RequestFactory
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 from asgiref.sync import async_to_sync
 from .consumers import connections
-from .models import TransactionsList, MobileList, TransactionsStatus, TransactionsGroupList
+from .models import TransactionsList, MobileList, TransactionsStatus, TransactionsGroupList, CallbackLog
 import json
 import boto3
 import base64
+import requests
 from .consumers import connections
 
 
+# ========== 辅助函数：发送callback并记录 ==========
+def send_callback(callback_url=None, data=None):
+    """
+    发送callback并自动记录到CallbackLog
+    
+    Args:
+        callback_url: callback的目标URL（可选，不传则使用配置的默认URL）
+        data: 要发送的数据（字典）
+    
+    Returns:
+        bool: 是否成功
+    """
+    # 如果没有传入 callback_url，使用配置中的默认URL
+    if not callback_url:
+        callback_url = getattr(settings, 'DEFAULT_CALLBACK_URL', None)
+    
+    if not callback_url:
+        print("Warning: No callback URL configured")
+        return False
+    
+    if not data:
+        print("Warning: No data to send in callback")
+        return False
+    
+    request_body = json.dumps(data, ensure_ascii=False)
+    
+    try:
+        response = requests.post(
+            callback_url,
+            json=data,
+            timeout=30,
+            headers={'Content-Type': 'application/json'}
+        )
+        
+        # 记录callback
+        CallbackLog.objects.create(
+            callback_url=callback_url,
+            request_body=request_body,
+            response_body=response.text[:10000],
+            status_code=response.status_code,
+            success=response.status_code == 200,
+            error_message=None if response.status_code == 200 else f"Status code: {response.status_code}"
+        )
+        
+        return response.status_code == 200
+        
+    except Exception as e:
+        # 记录失败的callback
+        CallbackLog.objects.create(
+            callback_url=callback_url,
+            request_body=request_body,
+            response_body=None,
+            status_code=None,
+            success=False,
+            error_message=str(e)
+        )
+        print(f"Callback failed: {e}")
+        return False
 
 
 
@@ -727,3 +787,57 @@ def test_telegram(request):
             "traceback": traceback.format_exc()
         }, status=500)
 
+
+# ========== send_callback_to_client ==========
+@csrf_exempt
+@api_view(["POST"])
+def send_callback_to_client(request):
+    """
+    接收来自设备的callback数据，然后转发到客户端配置的callback URL
+    只转发核心字段：status, tran_id, message, errorMessage
+    """
+    try:
+        data = request.data
+        
+        # 提取核心字段
+        callback_data = {
+            "status": data.get("status"),
+            "tran_id": data.get("tran_id"),
+            "message": data.get("message"),
+            "errorMessage": data.get("errorMessage")
+        }
+        
+        # 使用配置的默认callback URL
+        from django.conf import settings
+        callback_url = getattr(settings, 'DEFAULT_CALLBACK_URL', None)
+        
+        # 如果没有配置callback_url，返回提示
+        if not callback_url:
+            return Response({
+                "status": "skipped",
+                "message": "No callback URL configured in settings"
+            }, status=200)
+        
+        # 调用send_callback函数发送callback（只发送核心字段）
+        success = send_callback(callback_url, callback_data)
+        
+        if success:
+            return Response({
+                "status": "success",
+                "message": "Callback sent successfully",
+                "callback_url": callback_url,
+                "tran_id": data.get("tran_id")
+            })
+        else:
+            return Response({
+                "status": "failed",
+                "message": "Callback failed, check CallbackLog for details",
+                "callback_url": callback_url,
+                "tran_id": data.get("tran_id")
+            }, status=500)
+            
+    except Exception as e:
+        return Response({
+            "status": "error",
+            "message": str(e)
+        }, status=500)

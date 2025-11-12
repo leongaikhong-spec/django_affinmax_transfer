@@ -57,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'transfer.middleware.APILoggingMiddleware',  # API日志记录中间件
 ]
 
 ROOT_URLCONF = 'middleware.urls'
@@ -166,7 +167,6 @@ TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')  # 从 BotFather 获取
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '')      # 你的 Chat ID 或群组 ID
 TELEGRAM_TOPIC_ID = os.getenv('TELEGRAM_TOPIC_ID', '')    # 群组 Topic ID（可选）
 
-# 如果你想直接在这里配置（不推荐，建议使用环境变量）：
-# TELEGRAM_BOT_TOKEN = '你的_Bot_Token'
-# TELEGRAM_CHAT_ID = '你的_Chat_ID'
-# TELEGRAM_TOPIC_ID = '你的_Topic_ID'
+# ==================== Callback 配置 ====================
+# 固定的 Callback URL - 交易完成后会调用这个API
+DEFAULT_CALLBACK_URL = os.getenv('DEFAULT_CALLBACK_URL', 'http://47.130.115.16:9001/swagger/')
