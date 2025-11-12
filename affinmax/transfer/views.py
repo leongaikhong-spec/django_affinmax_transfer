@@ -174,7 +174,29 @@ def assign_pending_orders(request):
 
 
 # ========== update_is_busy ==========
-
+@swagger_auto_schema(
+    method="post",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "device": openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description="Phone number"
+            ),
+            "is_busy": openapi.Schema(
+                type=openapi.TYPE_INTEGER,
+                description="0 = Not Busy, 1 = Busy",
+                enum=[0, 1]
+            ),
+        },
+        required=["device", "is_busy"],
+    ),
+    responses={
+        200: "Status updated successfully",
+        400: "Missing required fields",
+        404: "Phone number not found"
+    },
+)
 @csrf_exempt
 @api_view(["POST"])
 def update_is_busy(request):
@@ -544,10 +566,9 @@ def trigger(request):
             "device": openapi.Schema(type=openapi.TYPE_STRING),
             "fileName": openapi.Schema(type=openapi.TYPE_STRING),
             "fileData": openapi.Schema(type=openapi.TYPE_STRING, description="Base64 encoded file data"),
-            "bucketName": openapi.Schema(type=openapi.TYPE_STRING),
             "tran_id": openapi.Schema(type=openapi.TYPE_STRING),
         },
-        required=["device", "fileName", "fileData", "bucketName", "tran_id"],
+        required=["device", "fileName", "fileData", "tran_id"],
     ),
     responses={200: "File uploaded to S3 successfully"},
 )
@@ -560,15 +581,16 @@ def upload_s3(request):
         device = data.get("device")
         file_name = data.get("fileName")
         file_data = data.get("fileData")
-        bucket_name = data.get("bucketName")
         tran_id = data.get("tran_id")
         
-        if not all([device, file_name, file_data, bucket_name, tran_id]):
+        # 使用默认的 bucket name（如果没有提供）
+        bucket_name = data.get("bucketName", "affinmax-transfer-bucket")
+        
+        if not all([device, file_name, file_data, tran_id]):
             missing = []
             if not device: missing.append("device")
             if not file_name: missing.append("fileName")
             if not file_data: missing.append("fileData")
-            if not bucket_name: missing.append("bucketName")
             if not tran_id: missing.append("tran_id")
             return Response({"error": f"Missing required fields: {missing}"}, status=400)
         
@@ -789,27 +811,76 @@ def test_telegram(request):
 
 
 # ========== send_callback_to_client ==========
+@swagger_auto_schema(
+    method="post",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "tran_id": openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description="Transactions ID"
+            ),
+        },
+        required=["tran_id"],
+    ),
+    responses={
+        200: "Callback sent successfully",
+        404: "Transaction not found",
+        500: "Failed to send callback"
+    },
+)
 @csrf_exempt
 @api_view(["POST"])
 def send_callback_to_client(request):
-    """
-    接收来自设备的callback数据，然后转发到客户端配置的callback URL
-    只转发核心字段：status, tran_id, message, errorMessage
-    """
     try:
         data = request.data
+        tran_id = data.get("tran_id")
+        callback_url = data.get("callback_url")  # 可选，允许临时指定callback URL
         
-        # 提取核心字段
-        callback_data = {
-            "status": data.get("status"),
-            "tran_id": data.get("tran_id"),
-            "message": data.get("message"),
-            "errorMessage": data.get("errorMessage")
-        }
+        # 如果只提供了 tran_id，从数据库查询交易信息（手动callback模式）
+        if tran_id and not data.get("status"):
+            try:
+                transaction = TransactionsList.objects.get(tran_id=tran_id)
+                
+                # 从数据库构建 callback 数据
+                callback_data = {
+                    "status": str(transaction.status),
+                    "tran_id": str(transaction.tran_id),
+                    "message": transaction.error_message or "Manual callback",
+                    "errorMessage": transaction.error_message or "Manual callback triggered"
+                }
+                
+                manual_mode = True
+                transaction_info = {
+                    "tran_id": transaction.tran_id,
+                    "status": transaction.status,
+                    "amount": transaction.amount,
+                    "bene_name": transaction.bene_name,
+                    "bene_acc_no": transaction.bene_acc_no,
+                    "error_message": transaction.error_message,
+                    "complete_date": transaction.complete_date.strftime('%Y-%m-%d %H:%M:%S') if transaction.complete_date else None
+                }
+                
+            except TransactionsList.DoesNotExist:
+                return Response({
+                    "status": "error",
+                    "message": f"Transaction with tran_id '{tran_id}' not found"
+                }, status=404)
+        else:
+            # 正常模式：使用传入的数据
+            callback_data = {
+                "status": data.get("status"),
+                "tran_id": data.get("tran_id"),
+                "message": data.get("message"),
+                "errorMessage": data.get("errorMessage")
+            }
+            manual_mode = False
+            transaction_info = None
         
-        # 使用配置的默认callback URL
-        from django.conf import settings
-        callback_url = getattr(settings, 'DEFAULT_CALLBACK_URL', None)
+        # 如果没有提供 callback_url，使用默认的
+        if not callback_url:
+            from django.conf import settings
+            callback_url = getattr(settings, 'DEFAULT_CALLBACK_URL', None)
         
         # 如果没有配置callback_url，返回提示
         if not callback_url:
@@ -822,22 +893,31 @@ def send_callback_to_client(request):
         success = send_callback(callback_url, callback_data)
         
         if success:
-            return Response({
+            response_data = {
                 "status": "success",
-                "message": "Callback sent successfully",
+                "message": "Manual callback sent successfully" if manual_mode else "Callback sent successfully",
                 "callback_url": callback_url,
-                "tran_id": data.get("tran_id")
-            })
+                "tran_id": callback_data.get("tran_id"),
+                "callback_data": callback_data
+            }
+            
+            # 如果是手动模式，返回交易详情
+            if manual_mode and transaction_info:
+                response_data["transaction_info"] = transaction_info
+            
+            return Response(response_data)
         else:
             return Response({
                 "status": "failed",
                 "message": "Callback failed, check CallbackLog for details",
                 "callback_url": callback_url,
-                "tran_id": data.get("tran_id")
+                "tran_id": callback_data.get("tran_id")
             }, status=500)
             
     except Exception as e:
+        import traceback
         return Response({
             "status": "error",
-            "message": str(e)
+            "message": f"Exception occurred: {str(e)}",
+            "traceback": traceback.format_exc()
         }, status=500)
