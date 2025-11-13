@@ -11,7 +11,7 @@ connections = {}
 last_heartbeat = {}
 
 # 心跳超时时间（秒）- 如果超过这个时间没收到心跳，设为离线
-HEARTBEAT_TIMEOUT = 15  # 30秒（客户端每5秒发一次，允许丢失更多次，更宽松）
+HEARTBEAT_TIMEOUT = 6  # 30秒（客户端每5秒发一次，允许丢失更多次，更宽松）
 
 class ScriptConsumer(AsyncWebsocketConsumer):
     async def connect(self):
