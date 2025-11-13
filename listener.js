@@ -23,32 +23,64 @@ let isConnected = false;
 let heartbeatInterval = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT = 5;
+let heartbeatTimer = null;  // 用于存储心跳定时器
+let wsReady = false;  // 手动跟踪 WebSocket 状态
 
 function connectWebSocket(onMessageCallback) {
-    if (ws && ws.readyState === 1) {
+    if (ws && wsReady) {
         // 已连接，无需重复连接
         return;
     }
+    
+    wsReady = false;
     ws = new WebSocket("ws://" + SERVER_IP + ":" + SERVER_PORT + "/ws/" + PHONE_NUMBER + "/");
+    
+    // 心跳发送函数
+    function sendHeartbeat() {
+        if (wsReady && ws) {
+            try {
+                ws.send(JSON.stringify({type: "ping", device: PHONE_NUMBER}));
+                heartbeatTimer = setTimeout(sendHeartbeat, 5000);  // 5秒后再次发送
+            } catch (e) {
+                log("❌ Heartbeat send failed: " + e);
+                wsReady = false;  // 标记为不可用
+            }
+        }
+    }
+    
     ws.on("open", () => {
+        wsReady = true;  // 标记为已连接
         isConnected = true;
         reconnectAttempts = 0;
         log("");
         log("✅ WebSocket connected");
         log("");
-        // 启动心跳
-        if (heartbeatInterval) clearInterval(heartbeatInterval);
-        heartbeatInterval = setInterval(() => {
-            if (ws && ws.readyState === 1) {
-                ws.send(JSON.stringify({type: "ping", device: PHONE_NUMBER}));
-            }
-        }, 5000); // 每 5 秒心跳
-        // 如果有未派单数据，自动派单
+        
+        // 清除旧的心跳定时器（如果有）
+        if (heartbeatTimer) {
+            clearTimeout(heartbeatTimer);
+            heartbeatTimer = null;
+        }
+        
+        // 立即发送一次心跳测试
+        try {
+            ws.send(JSON.stringify({type: "ping", device: PHONE_NUMBER}));
+        } catch (e) {
+            log("❌ Initial heartbeat failed: " + e);
+        }
+        
+        // 5秒后启动定期心跳
+        heartbeatTimer = setTimeout(sendHeartbeat, 5000);
     });
     ws.on("close", () => {
+        wsReady = false;  // 标记为已断开
         isConnected = false;
         log("❌ WebSocket disconnected, retrying...");
-        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        // 清除心跳定时器
+        if (heartbeatTimer) {
+            clearTimeout(heartbeatTimer);
+            heartbeatTimer = null;
+        }
         reconnectAttempts++;
         // 无限重连，间隔递增，最大间隔 5 秒
         let delay = Math.min(2000 * reconnectAttempts, 5000);
@@ -75,6 +107,7 @@ function connectWebSocket(onMessageCallback) {
         }
     });
     ws.on("error", (e) => {
+        wsReady = false;  // 标记为出错
         isConnected = false;
         log("❌ WebSocket error: " + e);
     });
