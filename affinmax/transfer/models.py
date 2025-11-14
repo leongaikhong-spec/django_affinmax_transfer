@@ -11,9 +11,9 @@ class TransactionsStatus(models.Model):
 
 class TransactionsGroupList(models.Model):
     total_tran_bene_acc = models.IntegerField(default=0)
-    total_tran_amount = models.CharField(max_length=50)
-    success_tran_amount = models.CharField(max_length=50)
-    current_balance = models.CharField(max_length=50)
+    total_tran_amount = models.DecimalField(max_digits=20, decimal_places=2)
+    success_tran_amount = models.DecimalField(max_digits=20, decimal_places=2)
+    current_balance = models.DecimalField(max_digits=20, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -27,7 +27,7 @@ class TransactionsGroupList(models.Model):
 class TransactionsList(models.Model):
     group = models.ForeignKey('TransactionsGroupList', on_delete=models.CASCADE, db_column='group_id', related_name='transfers', null=True, blank=True)
     tran_id = models.CharField(max_length=50, unique=True)
-    amount = models.CharField(max_length=20)
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     bene_acc_no = models.CharField(max_length=30)
     bene_name = models.CharField(max_length=100)
@@ -38,6 +38,10 @@ class TransactionsList(models.Model):
     complete_date = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     error_message = models.TextField(null=True, blank=True)
+    similarity_threshold = models.FloatField(default=0.7)  # ✅ 新增字段：保存每个订单的相似度阈值
+    screenshot_s3_path = models.CharField(max_length=500, null=True, blank=True)  # 存储截图的 S3 路径
+    pdf_s3_path = models.CharField(max_length=500, null=True, blank=True)  # 存储 PDF 的 S3 路径
+    
     class Meta:
         db_table = "transactions_list"
 
@@ -51,7 +55,7 @@ class MobileList(models.Model):
     is_activated = models.BooleanField(default=False)
     is_busy = models.BooleanField(default=False)
     last_error = models.TextField(null=True, blank=True)
-    current_balance = models.CharField(max_length=50, null=True, blank=True)
+    current_balance = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     corp_id = models.CharField(max_length=50, null=True, blank=True)

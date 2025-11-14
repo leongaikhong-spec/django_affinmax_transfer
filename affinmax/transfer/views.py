@@ -98,9 +98,6 @@ def send_task_to_device(mobile, credentials, group_obj):
 @csrf_exempt
 @api_view(["POST"])
 def assign_pending_orders(request):
-    # 获取 similarityThreshold 参数（如果有的话）
-    similarity_threshold = request.data.get("similarityThreshold", 0.7)  # 默认 0.7
-    
     # 查找空闲且已连接 WebSocket 的设备
     from .consumers import connections
     mobiles = MobileList.objects.filter(is_online=True, is_busy=False, is_activated=True)
@@ -116,7 +113,8 @@ def assign_pending_orders(request):
     batch_orders = list(TransactionsList.objects.filter(status=0, phone_number="").order_by('id')[:5])
     if not batch_orders:
         return Response({"msg": "No pending orders to assign"}, status=200)
-    # 先将订单分配给设备（phone_number/status=1），但不分组
+    
+    # beneficiaries 每个都带自己的 similarity_threshold
     beneficiaries = []
     assigned = []
     total_tran_amount = 0
@@ -132,11 +130,12 @@ def assign_pending_orders(request):
         assigned.append(order.tran_id)
         beneficiaries.append({
             "tran_id": order.tran_id,
-            "amount": order.amount,
+            "amount": str(order.amount),  # 转换 Decimal 为字符串
             "bene_acc_no": order.bene_acc_no,
             "bene_name": order.bene_name,
             "bank_code": order.bank_code,
             "recRef": order.recRef,
+            "similarity_threshold": order.similarity_threshold if hasattr(order, 'similarity_threshold') else 0.7
         })
         try:
             total_tran_amount += float(order.amount)
@@ -148,9 +147,9 @@ def assign_pending_orders(request):
     if ready_orders:
         group_obj = TransactionsGroupList.objects.create(
             total_tran_bene_acc=len(ready_orders),
-            total_tran_amount=str(total_tran_amount),
-            success_tran_amount="",
-            current_balance=""
+            total_tran_amount=total_tran_amount,
+            success_tran_amount=0,
+            current_balance=0
         )
         for order in ready_orders:
             order.group = group_obj
@@ -160,7 +159,7 @@ def assign_pending_orders(request):
         "user_id": mobile.user_id,
         "password": mobile.password,
         "tranPass": mobile.tran_pass,
-        "similarityThreshold": similarity_threshold,  # ✅ 使用传递的参数
+        # 不再统一 similarityThreshold，直接下发 beneficiaries 列表，每个带自己的 similarity_threshold
         "beneficiaries": beneficiaries,
         "log_file": mobile.log_file,
         "device": mobile.device,
@@ -170,7 +169,13 @@ def assign_pending_orders(request):
     from asgiref.sync import async_to_sync
     from .consumers import connections
     resp = send_task_to_device(mobile, credentials, group_obj)
-    return Response({"msg": "Assigned orders", "orders": assigned, "device": mobile.device, "group_id": str(group_obj.id) if group_obj else ""}, status=200)
+    return Response({
+        "msg": "Assigned orders",
+        "orders": assigned,
+        "device": mobile.device,
+        "group_id": str(group_obj.id) if group_obj else "",
+        "beneficiaries": beneficiaries
+    }, status=200)
 
 
 # ========== update_is_busy ==========
@@ -209,6 +214,7 @@ def update_is_busy(request):
         mobile.is_busy = bool(int(is_busy))
         mobile.save()
         # 设备变空闲时自动调用 assign_pending_orders 实现自动派单
+        # ✅ 不需要传递 similarityThreshold，因为已经保存在数据库中
         if mobile.is_busy is False:
             import time
             time.sleep(2)  # 等待2秒
@@ -237,6 +243,9 @@ def update_group_success_amount(request):
     try:
         from .models import TransactionsGroupList
         group = TransactionsGroupList.objects.get(id=group_id)
+        # 处理空字符串转换为 None 或 0
+        if success_tran_amount == "":
+            success_tran_amount = 0
         group.success_tran_amount = success_tran_amount
         group.save()
         return Response({"status": "ok"})
@@ -259,6 +268,9 @@ def update_current_balance(request):
         from .models import MobileList
         try:
             mobile = MobileList.objects.get(device=device)
+            # 处理空字符串转换为 None
+            if current_balance == "":
+                current_balance = None
             mobile.current_balance = current_balance
             mobile.save()
             updated.append("mobile")
@@ -269,6 +281,9 @@ def update_current_balance(request):
         from .models import TransactionsGroupList
         try:
             group = TransactionsGroupList.objects.get(id=int(group_id))
+            # 处理空字符串转换为 None
+            if current_balance == "":
+                current_balance = None
             group.current_balance = current_balance
             group.save()
             updated.append("group")
@@ -447,11 +462,20 @@ def create_mobile(request):
     mobile, created = MobileList.objects.get_or_create(phone_number=phone_number)
     # 更新其它字段
     for field in [
-        "corp_id", "user_id", "password", "tran_pass", "current_balance",
+        "corp_id", "user_id", "password", "tran_pass",
         "last_error", "log_file"
     ]:
         if field in data:
             setattr(mobile, field, data[field])
+    
+    # 单独处理 current_balance，避免空字符串报错
+    if "current_balance" in data:
+        balance = data["current_balance"]
+        if balance == "" or balance is None:
+            mobile.current_balance = None
+        else:
+            mobile.current_balance = balance
+    
     for field in ["is_activated", "is_busy"]:
         if field in data:
             setattr(mobile, field, bool(int(data[field])))
@@ -501,6 +525,8 @@ def trigger(request):
             mobile = m
             break
     beneficiaries = data.get("beneficiaries", [])
+    similarity_threshold = data.get("similarityThreshold", 0.7)  # ✅ 获取阈值
+    
     # 只在 TransactionsList 创建订单，不创建 group
     for bene in beneficiaries:
         TransactionsList.objects.create(
@@ -512,7 +538,8 @@ def trigger(request):
             recRef=bene.get("recRef"),
             phone_number="",
             status=0,
-            error_message="Waiting"
+            error_message="Waiting",
+            similarity_threshold=similarity_threshold  # ✅ 保存到数据库
         )
 
     # 没有可用设备，订单已入库，等待分配
@@ -537,14 +564,11 @@ def trigger(request):
     }
     pn = mobile.device
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    # 自动调用 assign_pending_orders 派单，并传递 similarityThreshold
+    # 自动调用 assign_pending_orders 派单
+    # ✅ 不需要传递 similarityThreshold，因为已经保存在数据库中
     from django.test import RequestFactory
     factory = RequestFactory()
-    assign_request = factory.post(
-        '/backend/assign_pending_orders/',
-        data={"similarityThreshold": data.get("similarityThreshold", 0.7)},  # ✅ 传递参数
-        content_type='application/json'
-    )
+    assign_request = factory.post('/backend/assign_pending_orders/')
     assign_response = assign_pending_orders(assign_request)
     try:
         assign_data = assign_response.data
@@ -663,6 +687,21 @@ def upload_s3(request):
         
         # 生成 S3 URL
         s3_url = f"https://{bucket_name}.s3.{S3_CONFIG['Region']}.amazonaws.com/{s3_key}"
+        
+        # 保存 S3 路径到数据库
+        try:
+            transaction = TransactionsList.objects.get(tran_id=tran_id)
+            # 根据文件类型保存到不同字段
+            if file_name.lower().endswith('.pdf'):
+                transaction.pdf_s3_path = s3_url
+            else:
+                transaction.screenshot_s3_path = s3_url
+            transaction.save()
+        except TransactionsList.DoesNotExist:
+            # 如果找不到交易记录，记录日志但不影响上传成功的响应
+            print(f"[upload_s3] Transaction not found for tran_id: {tran_id}")
+        except Exception as db_error:
+            print(f"[upload_s3] Failed to save S3 path to database: {db_error}")
         
         return Response({
             "status": "success",

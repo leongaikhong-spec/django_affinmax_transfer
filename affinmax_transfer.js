@@ -1299,7 +1299,9 @@ function run_transfer_process(data) { // error_status, message, errorMessage not
         }
 
         try {
-            if (!check_bene(bene.bene_name, data.similarityThreshold, bene.tran_id, data, failedTranIds, balance, start_time)) {
+            // 使用每个 bene 的 similarity_threshold 字段
+            let similarityThreshold = (typeof bene.similarity_threshold !== 'undefined') ? bene.similarity_threshold : 0.7;
+            if (!check_bene(bene.bene_name, similarityThreshold, bene.tran_id, data, failedTranIds, balance, start_time)) {
                 // check_bene 失败时已 log 并记录 tran_id
                 continue;
             }
