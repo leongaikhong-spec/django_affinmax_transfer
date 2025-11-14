@@ -169,4 +169,4 @@ TELEGRAM_TOPIC_ID = os.getenv('TELEGRAM_TOPIC_ID', '')    # 群组 Topic ID（�
 
 # ==================== Callback 配置 ====================
 # 固定的 Callback URL - 交易完成后会调用这个API
-DEFAULT_CALLBACK_URL = os.getenv('DEFAULT_CALLBACK_URL', 'http://47.130.115.16:9001/swagger/')
+DEFAULT_CALLBACK_URL = os.getenv('DEFAULT_CALLBACK_URL')
