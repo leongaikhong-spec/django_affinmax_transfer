@@ -429,27 +429,33 @@ function click_duit_now() {
     log("✅ Clicked DuitNow button");
     sleep(500);
 
-    if (id("tv_label").text("DuitNow Transfer").findOne(60000)) {
-        click(197, 603);
-        log("✅ Clicked DuitNow Transfer button");
+    let duitNowTransferBtn = id("tv_label").text("DuitNow Transfer").findOne(60000);
+    if (duitNowTransferBtn) {
+        let center = duitNowTransferBtn.center();
+        click(center.x, center.y);
+        log(`✅ Clicked DuitNow Transfer button at (${center.x}, ${center.y})`);
         sleep(500);
     } else {
         log("❌ DuitNow Transfer button not found after 60 seconds");
         throw new Error("DuitNow Transfer button not found");
     }
 
-    if (id("tv_label").text("Pay to Account").findOne(60000)) {
-        click(197, 603);
-        log("✅ Clicked Pay to Account button");
+    let payToAccountBtn = id("tv_label").text("Pay to Account").findOne(60000);
+    if (payToAccountBtn) {
+        let center = payToAccountBtn.center();
+        click(center.x, center.y);
+        log(`✅ Clicked Pay to Account button at (${center.x}, ${center.y})`);
         sleep(500);
     } else {
         log("❌ Pay to Account button not found after 60 seconds");
         throw new Error("Pay to Account button not found");
     }
 
-    if (id("tv_label").text("New Transfer").findOne(60000)) {
-        click(197, 603);
-        log("✅ Clicked New Transfer button");
+    let newTransferBtn = id("tv_label").text("New Transfer").findOne(60000);
+    if (newTransferBtn) {
+        let center = newTransferBtn.center();
+        click(center.x, center.y);
+        log(`✅ Clicked New Transfer button at (${center.x}, ${center.y})`);
         sleep(500);
     } else {
         log("❌ New Transfer button not found after 60 seconds");
@@ -466,9 +472,17 @@ function transaction_details() {
     id('text_input_end_icon').findOne(60000).click();
     log("✅ Clicked dropdown button");
 
-    sleep(1000);
-    click(360, 395);
-    log("✅ Chosen debit from account no./currency");
+    //sleep(1000);
+    //click(360, 395);
+    let debitAcc = id("btn_balance_inquiry").text("Balance Inquiry").findOne(60000);
+    if (debitAcc) {
+        let center = debitAcc.center();
+        click(center.x, center.y);
+        log(`✅ Chosen debit from account no./currency at (${center.x}, ${center.y})`);
+    } else {
+        log("❌ Debit from account no./currency option not found");
+        throw new Error("Debit from account no./currency option not found");
+    }
 }
 
 function add_beneficiary_button() {
@@ -533,9 +547,17 @@ function beneficiary_details(amount, accNo, name) {
     id('text_input_end_icon').findOne(60000).click();
     log("✅ Clicked dropdown button for transaction type");
 
-    sleep(1000);
-    click(200, 466);
-    log("✅ Chosen transaction type");
+    // sleep(1000);
+    // click(200, 466);
+    let transType = id("fic_transaction_amount").findOne(60000);
+    if (transType) {
+        let center = transType.center();
+        click(center.x, center.y);
+        log(`✅ Chosen transaction type at (${center.x}, ${center.y})`);
+    } else {
+        log("❌ Transaction type option not found");
+        throw new Error("Transaction type option not found");
+    }
 
     let transAmount = id("fic_transaction_amount").findOne(60000);
     let amountField = transAmount.findOne(className("android.widget.EditText"));
@@ -639,7 +661,7 @@ function findAndClickBank(bankName) {
     let bankItem;
     log("🔍 Searching bank");
     // First try with 6 scrolls
-    for (let i = 0; i < 6; i++) { // 2
+    for (let i = 0; i < 7; i++) { // 2
         bankItem = id("tv_name").text(bankName).findOne(1000);
         if (bankItem) {
             bankItem.parent().click();
@@ -658,7 +680,7 @@ function findAndClickBank(bankName) {
         log("✅ Clicked More Result button");
 
         // After load more, scroll 2 more times
-        for (let j = 0; j < 2; j++) { // 2
+        for (let j = 0; j < 3; j++) { // 2
             bankItem = id("tv_name").text(bankName).findOne(1000);
             if (bankItem) {
                 bankItem.parent().click();
@@ -931,28 +953,28 @@ function download_transfer_slip() {
     log("✅ Clicked Download button");
 }
 
-function click_pdf_ref_no(bene_name) {
-    let name = id("tv_title").text(bene_name).findOne(10000);
-    if (name) {
-        let parent = name.parent();
-        if (parent && parent.className() === "android.view.ViewGroup") {
-            parent.click();
-            log(`✅ Clicked ViewGroup for bene_name '${bene_name}'`);
-            sleep(2000); // 等待页面响应（打开或关闭）
-            return true;
-        } else {
-            log(`❌ ViewGroup parent not found for bene_name '${bene_name}'`);
-            return false;
-        }
-    } else {
-        log(`❌ Beneficiary name '${bene_name}' not found in list`);
-        return false;
-    }
-}
+// function click_pdf_ref_no(bene_name) {
+//     let name = id("tv_title").text(bene_name).findOne(10000);
+//     if (name) {
+//         let parent = name.parent();
+//         if (parent && parent.className() === "android.view.ViewGroup") {
+//             parent.click();
+//             log(`✅ Clicked ViewGroup for bene_name '${bene_name}'`);
+//             sleep(2000); // 等待页面响应（打开或关闭）
+//             return true;
+//         } else {
+//             log(`❌ ViewGroup parent not found for bene_name '${bene_name}'`);
+//             return false;
+//         }
+//     } else {
+//         log(`❌ Beneficiary name '${bene_name}' not found in list`);
+//         return false;
+//     }
+// }
 
 function click_pdf_ref_no_by_index(index) {
     // 获取所有受益人名称元素
-    let nameElements = id("tv_title").find();
+    let nameElements = id("tv_title").find(10000);
 
     if (!nameElements || nameElements.length === 0) {
         log(`❌ No beneficiary names found in list`);
