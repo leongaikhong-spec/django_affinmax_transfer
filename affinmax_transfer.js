@@ -392,12 +392,10 @@ function check_balance(beneficiaries) {
                 found = true;
                 break;
             } else {
-                // 检测到 NaN 或 null 时尝试刷新余额
-                show_balance();
+                throw new Error("Cannot capture valid balance");
             }
         } else {
-            // 没找到余额控件时也尝试刷新
-            show_balance();
+            throw new Error("Cannot capture valid balance");
         }
     }
     if (!found) {
@@ -412,7 +410,7 @@ function check_balance(beneficiaries) {
     log("💰 Current balance: " + balanceValue + " | Total transfer amount: " + totalAmount);
     if (totalAmount > balanceValue) {
         log("❌ Insufficient balance, stopping transfer");
-        return null; // ❌ 余额不足，返回 null
+        return balanceValue; // ❌ 余额不足，返回 null
     } else {
         log("✅ Balance is sufficient, continue transfer");
         return balanceValue; // ✅ 返回数字余额
