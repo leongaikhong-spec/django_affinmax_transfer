@@ -41,6 +41,8 @@ class TransactionsList(models.Model):
     similarity_threshold = models.FloatField(default=0.7)  # ✅ 新增字段：保存每个订单的相似度阈值
     screenshot_s3_path = models.CharField(max_length=500, null=True, blank=True)  # 存储截图的 S3 路径
     pdf_s3_path = models.CharField(max_length=500, null=True, blank=True)  # 存储 PDF 的 S3 路径
+    # 记录 callback 状态：0 = callback 失败或未发送, 1 = callback 成功
+    callback_status = models.IntegerField(default=0, db_column='callback_status')
     
     class Meta:
         db_table = "transactions_list"

@@ -943,15 +943,27 @@ def send_callback_to_client(request):
             # 如果是手动模式，返回交易详情
             if manual_mode and transaction_info:
                 response_data["transaction_info"] = transaction_info
+            # 更新 TransactionsList 的 callback_status 为成功（1）
+            try:
+                if callback_data.get("tran_id"):
+                    from .models import TransactionsList
+                    tran = TransactionsList.objects.filter(tran_id=callback_data.get("tran_id")).first()
+                    if tran:
+                        tran.callback_status = 1
+                        tran.save()
+            except Exception as ee:
+                print(f"Failed to update callback_status on success: {ee}")
             
             return Response(response_data)
         else:
+            # callback 失败：默认 callback_status 保持为 0（数据库默认） — 不需要额外更新
             return Response({
                 "status": "failed",
                 "message": "Callback failed, check CallbackLog for details",
                 "callback_url": callback_url,
                 "tran_id": callback_data.get("tran_id")
             }, status=500)
+        
             
     except Exception as e:
         import traceback
