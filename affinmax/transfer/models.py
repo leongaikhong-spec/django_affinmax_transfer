@@ -43,6 +43,8 @@ class TransactionsList(models.Model):
     pdf_s3_path = models.CharField(max_length=500, null=True, blank=True)  # 存储 PDF 的 S3 路径
     # 记录 callback 状态：0 = callback 失败或未发送, 1 = callback 成功
     callback_status = models.IntegerField(default=0, db_column='callback_status')
+    # 记录 callback 尝试次数，每次失败重试都会递增
+    callback_attempts = models.IntegerField(default=0, db_column='callback_attempts')
     
     class Meta:
         db_table = "transactions_list"

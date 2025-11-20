@@ -16,6 +16,9 @@ import boto3
 import base64
 import requests
 from .consumers import connections
+from decimal import Decimal, InvalidOperation
+import threading
+import time
 
 
 # ========== 辅助函数：发送callback并记录 ==========
@@ -76,6 +79,89 @@ def send_callback(callback_url=None, data=None):
         )
         print(f"Callback failed: {e}")
         return False
+
+
+# ========== 后台线程：自动重试callback直到成功 ==========
+def auto_retry_callback(transaction_id, callback_url, callback_data, retry_interval=30):
+    """
+    后台线程函数：自动重试callback直到成功为止
+    
+    Args:
+        transaction_id: TransactionsList 的主键 ID
+        callback_url: callback 的目标 URL
+        callback_data: 要发送的数据
+        retry_interval: 重试间隔（秒），默认30秒
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    while True:
+        try:
+            # 等待指定时间后重试
+            time.sleep(retry_interval)
+            
+            # 检查数据库中的状态（可能已经成功了）
+            try:
+                transaction = TransactionsList.objects.get(id=transaction_id)
+                if transaction.callback_status == 1:
+                    logger.info(f"✅ Transaction {transaction_id} callback already successful, stopping retry thread")
+                    break
+                
+                # 增加尝试次数
+                transaction.callback_attempts += 1
+                transaction.save(update_fields=['callback_attempts'])
+                
+                logger.info(f"🔄 Retry #{transaction.callback_attempts} for transaction {transaction_id}")
+                
+            except TransactionsList.DoesNotExist:
+                logger.error(f"❌ Transaction {transaction_id} not found, stopping retry")
+                break
+            
+            # 尝试发送 callback
+            try:
+                response = requests.post(
+                    callback_url,
+                    json=callback_data,
+                    timeout=30,
+                    headers={'Content-Type': 'application/json'}
+                )
+                
+                # 记录到 CallbackLog
+                CallbackLog.objects.create(
+                    callback_url=callback_url,
+                    request_body=json.dumps(callback_data),
+                    response_body=response.text[:10000],
+                    status_code=response.status_code,
+                    success=(response.status_code == 200),
+                    error_message=None if response.status_code == 200 else f"HTTP {response.status_code}"
+                )
+                
+                if response.status_code == 200:
+                    # 成功！更新数据库并停止重试
+                    transaction.callback_status = 1
+                    transaction.save(update_fields=['callback_status'])
+                    logger.info(f"✅ Callback successful for transaction {transaction_id} after {transaction.callback_attempts} attempts")
+                    break
+                else:
+                    logger.warning(f"⚠️  Callback retry failed with status {response.status_code}, will retry in {retry_interval}s")
+                    
+            except requests.exceptions.RequestException as e:
+                # 网络错误，记录并继续重试
+                logger.error(f"❌ Network error during callback retry: {str(e)}")
+                
+                CallbackLog.objects.create(
+                    callback_url=callback_url,
+                    request_body=json.dumps(callback_data),
+                    response_body=None,
+                    status_code=None,
+                    success=False,
+                    error_message=str(e)
+                )
+                
+        except Exception as e:
+            logger.exception(f"❌ Unexpected error in retry thread for transaction {transaction_id}: {str(e)}")
+            # 发生异常也继续重试，不停止线程
+            continue
 
 
 
@@ -264,13 +350,23 @@ def update_current_balance(request):
     updated = []
     # Debug log
     print(f"[update_current_balance] device={device}, group_id={group_id}, current_balance={current_balance}")
+    from decimal import Decimal, InvalidOperation
     if device:
         from .models import MobileList
         try:
             mobile = MobileList.objects.get(device=device)
             # 处理空字符串转换为 None
-            if current_balance == "":
+            # 如果客户端发送 "null" 字符串，或 None，或空字符串，统一设为 None
+            if current_balance in ("", None) or (isinstance(current_balance, str) and current_balance.strip().lower() in ("null", "none")):
                 current_balance = None
+            else:
+                # 尝试把字符串或数字转换为 Decimal
+                try:
+                    # 如果传入是字符串数字或数值，转为 Decimal
+                    current_balance = Decimal(str(current_balance))
+                except (InvalidOperation, ValueError):
+                    # 若无法解析，设置为 None 以避免 ValidationError
+                    current_balance = None
             mobile.current_balance = current_balance
             mobile.save()
             updated.append("mobile")
@@ -282,8 +378,13 @@ def update_current_balance(request):
         try:
             group = TransactionsGroupList.objects.get(id=int(group_id))
             # 处理空字符串转换为 None
-            if current_balance == "":
+            if current_balance in ("", None) or (isinstance(current_balance, str) and current_balance.strip().lower() in ("null", "none")):
                 current_balance = None
+            else:
+                try:
+                    current_balance = Decimal(str(current_balance))
+                except (InvalidOperation, ValueError):
+                    current_balance = None
             group.current_balance = current_balance
             group.save()
             updated.append("group")
@@ -950,16 +1051,40 @@ def send_callback_to_client(request):
                     tran = TransactionsList.objects.filter(tran_id=callback_data.get("tran_id")).first()
                     if tran:
                         tran.callback_status = 1
-                        tran.save()
+                        tran.save(update_fields=['callback_status'])
             except Exception as ee:
                 print(f"Failed to update callback_status on success: {ee}")
             
             return Response(response_data)
         else:
-            # callback 失败：默认 callback_status 保持为 0（数据库默认） — 不需要额外更新
+            # callback 失败：启动后台线程自动重试直到成功
+            try:
+                if callback_data.get("tran_id"):
+                    from .models import TransactionsList
+                    tran = TransactionsList.objects.filter(tran_id=callback_data.get("tran_id")).first()
+                    if tran:
+                        # 增加首次失败尝试次数
+                        tran.callback_attempts += 1
+                        tran.save(update_fields=['callback_attempts'])
+                        
+                        # 启动后台线程自动重试（不限次数，直到成功）
+                        retry_thread = threading.Thread(
+                            target=auto_retry_callback,
+                            args=(tran.id, callback_url, callback_data, 30),  # 30秒重试间隔
+                            daemon=True  # 守护线程，主程序退出时自动结束
+                        )
+                        retry_thread.start()
+                        retry_message = f"Auto-retry started in background (every 30s until success)"
+                    else:
+                        retry_message = "Transaction not found for retry"
+            except Exception as ee:
+                print(f"Failed to start retry thread: {ee}")
+                retry_message = f"Failed to start retry: {str(ee)}"
+            
             return Response({
                 "status": "failed",
-                "message": "Callback failed, check CallbackLog for details",
+                "message": "Callback failed, auto-retry started",
+                "retry_info": retry_message,
                 "callback_url": callback_url,
                 "tran_id": callback_data.get("tran_id")
             }, status=500)

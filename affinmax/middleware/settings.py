@@ -170,3 +170,19 @@ TELEGRAM_TOPIC_ID = os.getenv('TELEGRAM_TOPIC_ID', '')    # 群组 Topic ID（�
 # ==================== Callback 配置 ====================
 # 固定的 Callback URL - 交易完成后会调用这个API
 DEFAULT_CALLBACK_URL = os.getenv('DEFAULT_CALLBACK_URL')
+
+# ==================== Celery 配置 ====================
+# Celery broker URL (使用 Redis)
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+# Celery result backend (使用 Redis)
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+# 接受的内容类型
+CELERY_ACCEPT_CONTENT = ['json']
+# 任务序列化格式
+CELERY_TASK_SERIALIZER = 'json'
+# 结果序列化格式
+CELERY_RESULT_SERIALIZER = 'json'
+# 时区设置
+CELERY_TIMEZONE = 'Asia/Kuala_Lumpur'
+# Callback 重试配置 - 无限重试直到成功
+CALLBACK_RETRY_INTERVAL = 30  # 每30秒重试一次

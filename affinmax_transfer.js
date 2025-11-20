@@ -26,7 +26,7 @@ function log(msg) {
 let error_status = "2";
 let message = "Transaction Success";
 let errorMessage = "Transaction Success";
-let balance = "null";
+let balance = null;
 
 // 记录已上传 status 的 tran_id
 let failedTranIds = [];
@@ -288,7 +288,7 @@ function update_backend_group_and_balance(group_id, successAmount, balance) {
         http.postJson("http://" + SERVER_IP + ":" + SERVER_PORT + "/backend/update_current_balance/", {
             device: PHONE_NUMBER,
             group_id: String(group_id),
-            current_balance: String(final_balance)
+            current_balance: final_balance  // send as number or null, not string "null"
         });
     }
 }
@@ -475,6 +475,7 @@ function transaction_details() {
     let debitAcc = id("btn_balance_inquiry").text("Balance Inquiry").findOne(60000);
     if (debitAcc) {
         let center = debitAcc.center();
+        sleep(1000);
         click(center.x, center.y);
         log(`✅ Chosen debit from account no./currency at (${center.x}, ${center.y})`);
     } else {
@@ -510,7 +511,7 @@ function choose_open_bene() {
     
     do {
         // 点击 rb_open_bene
-        let openBeneBtn = id('rb_open_bene').findOne(5000);
+        let openBeneBtn = id('rb_open_bene').findOne(60000);
         if (openBeneBtn) {
             openBeneBtn.click();
             log("✅ Clicked rb_open_bene (Open Beneficiary)");
@@ -550,6 +551,7 @@ function beneficiary_details(amount, accNo, name) {
     let transType = id("fic_transaction_amount").findOne(60000);
     if (transType) {
         let center = transType.center();
+        sleep(1000);
         click(center.x, center.y);
         log(`✅ Chosen transaction type at (${center.x}, ${center.y})`);
     } else {

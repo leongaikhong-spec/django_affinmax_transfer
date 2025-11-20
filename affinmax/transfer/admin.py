@@ -10,8 +10,8 @@ class TransactionsGroupListAdmin(admin.ModelAdmin):
 # TransactionsList 后台
 @admin.register(TransactionsList)
 class TransactionsListAdmin(admin.ModelAdmin):
-    list_display = ("tran_id", "group_id", "amount", "bene_acc_no", "bene_name", "bank_code", "recRef", "phone_number", "status", "callback_status", "complete_date", "updated_at", "error_message")
-    search_fields = ("tran_id", "group_id", "amount", "bene_acc_no", "bene_name", "bank_code", "recRef", "phone_number", "status", "callback_status", "complete_date", "updated_at", "error_message")
+    list_display = ("tran_id", "group_id", "amount", "bene_acc_no", "bene_name", "bank_code", "recRef", "phone_number", "status", "callback_status", "callback_attempts", "complete_date", "updated_at", "error_message")
+    search_fields = ("tran_id", "group_id", "amount", "bene_acc_no", "bene_name", "bank_code", "recRef", "phone_number", "status", "callback_status", "callback_attempts", "complete_date", "updated_at", "error_message")
     list_filter = ("status", "callback_status", "bank_code")
 
 # MobileList 后台
